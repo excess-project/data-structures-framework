@@ -1,0 +1,20 @@
+EXCESS data structures framework
+
+ Copyright (C) 2014 Anders Gidenstam
+ Copyright (C) 2011 Håkan Sundell    (Skeleton for the experiment framework)
+
+ License: Not decided yet.
+
+INSTALL
+-------
+
+1. Configure the dependencies in the top-level Makefile.
+
+2. make.
+
+3. Run
+   ./testbench -e 0 -h
+   ./testbench -e 1 -h
+   ./testbench -e 2 -h
+
+
