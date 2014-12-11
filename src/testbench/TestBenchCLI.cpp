@@ -75,7 +75,7 @@ static void perform_experiment()
 {
   experiment->SetNrThreads(nrThreads);
   experiment->CreateScenario();
-  
+
   for (int impl = 0; impl < active_implementations.size(); impl++) {
     pthread_t thread[nrThreads];
 
