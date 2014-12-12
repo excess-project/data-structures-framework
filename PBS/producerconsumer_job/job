@@ -85,13 +85,12 @@ export RAPLSAMPLE="$HOME/EXCESS-software/state-record-tool/read-rapl-likwid -s 1
 export TEMPSAMPLE="$HOME/EXCESS-software/state-record-tool/read-coretemp -d $SAMPLEDURATION"
 
 for Frequency in $FREQUENCIES; do
-    # Set the CPU frequency. How is this done one the HLRS EXCESS cluster?
-    likwid-setFrequencies -c S0 -f $Frequency
-    likwid-setFrequencies -c S1 -f $Frequency
+    # Set the CPU frequency.
+    likwid-setFrequencies -f $Frequency
 
     sleep 5s
     echo Verifying CPU frequency setting.
-    cpufreq-info
+    likwid-setFrequencies -p
     sleep 5s
 
     for Threads in $THREADS; do
