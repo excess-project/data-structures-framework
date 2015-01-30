@@ -1,5 +1,5 @@
 // CLI interface to the NOBLE/EXCESS data structures test framework
-//   Copyright (C) 2011 - 2014  Anders Gidenstam
+//   Copyright (C) 2011 - 2015  Anders Gidenstam
 //
 
 #include <iostream>
@@ -28,7 +28,7 @@ const int PUs_per_socket = 8;
 const int sockets = 2;
 
 typedef enum {
-  NONE, FILL_PU, FILL_CORE, JUMP
+  NONE=-1, FILL_PU, FILL_CORE, JUMP_SOCKET
 } pinning_strategy_t;
 
 pinning_strategy_t pinning = NONE; // The default is None.
@@ -129,6 +129,7 @@ static void perform_experiment()
       std::setprecision(std::numeric_limits<long double>::digits10) <<
       current_implementation <<
       "  " << nrThreads <<
+      "  " << pinning <<
       "  " << duration <<
       "  " << initDelay <<
       "  " << ((long double)start_time.tv_sec +
@@ -203,7 +204,7 @@ static void process_arguments(int argc, char** argv)
     } else if (arg.compare("-p") == 0) {
       int strategy;
       if ((++i < argc) && try_parse(string(argv[i]), strategy) &&
-          (NONE <= strategy) && (strategy <= JUMP)) {
+          (NONE <= strategy) && (strategy <= JUMP_SOCKET)) {
         pinning = (pinning_strategy_t)strategy;
       } else {
         std::cerr << "Bad pinning strategy given with -p." << std::endl;
@@ -251,7 +252,7 @@ static void print_usage(int argc, char** argv)
   using std::endl;
 
   cout << "EXCESS data structures experiment framework." << endl;
-  //cout << "  Copyright (C) 2011 - 2014  Anders Gidenstam" << endl;
+  //cout << "  Copyright (C) 2011 - 2015  Anders Gidenstam" << endl;
   //cout << "  Copyright (C) 2011         Håkan Sundell" << endl;
 
   cout << endl;
@@ -323,6 +324,7 @@ static void print_output_legend()
   std::cout <<
     "<implementation#>" <<
     "  <#threads>" <<
+    "  <pinning#>" <<
     "  <duration sec>" <<
     "  <initialization delay sec>" <<
     "  <start time instant in seconds>" <<
@@ -418,14 +420,18 @@ static void pin_thread(int tid, pinning_strategy_t strategy)
   switch (strategy) {
   case NONE:
   default:
+    //std::cerr << "pinning = NONE" << std::endl;
     return;
   case FILL_PU:
+    //std::cerr << "pinning = FILL_PU" << std::endl;
     bit = (tid/PUs_per_core + (tid % PUs_per_core)*total_cores) % total_PUs;
     break;
   case FILL_CORE:
+    //std::cerr << "pinning = FILL_CORE" << std::endl;
     bit = tid % total_PUs;
     break;
-  case JUMP:
+  case JUMP_SOCKET:
+    //std::cerr << "pinning = JUMP_SOCKET" << std::endl;
     bit =
       (tid / sockets + (tid % sockets) * cores_per_socket +
        (tid/total_cores)*cores_per_socket) % total_PUs;
