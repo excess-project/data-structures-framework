@@ -18,7 +18,7 @@ date
 echo "PBS_O_HOST=$PBS_O_HOST  # The name of the host upon which the qsub command is running."
 echo "PBS_O_WORKDIR=$PBS_O_WORKDIR  # The absolute path of the current working directory of the qsub command."
 echo "PBS_JOBID=$PBS_JOBID  # The job identifier assigned to the job by the batch system."
-echo "PBS_JOBNAME=$PBS_JOBNAME 	# The job name supplied by the user."
+echo "PBS_JOBNAME=$PBS_JOBNAME     # The job name supplied by the user."
 
 #load used modules
 . $HOME/.modules
@@ -49,15 +49,15 @@ PROGRAM=$HOME/EXCESS-software/data-structures-framework/testbench
 
 # The actual frequency on the HLRS cluster is unknown.
 # Probably 2.9GHz with potential TurboBoost to 3.8GHz. 
-FREQUENCIES=""
+FREQUENCIES="3"
 #FREQUENCIES="3.4Ghz 2.3Ghz 1.2Ghz"
 #THREADS="2 4 6 8 10 12 14 16"
 THREADS="CASETHREADS"
-# The total case duration is 5 + $KILLDURATION + 10 seconds.
+# The total case duration is 2 + $KILLDURATION + 3 seconds.
 # $KILLDURATION must be sufficiently larger than $PRGDURATION or
 # the case may be terminated prematurely.
 KILLDURATION="40"
-SAMPLEDURATION="50"
+SAMPLEDURATION="44"
 REPEATS="1"
 #   0. Queue NOBLE Lock-Free DB          1. Queue NOBLE Lock-Free DU
 #   2. Queue NOBLE Lock-Free SB          3. Queue NOBLE Lock-Free BB
@@ -65,59 +65,64 @@ REPEATS="1"
 #   6. Queue NOBLE Lock-Based            7. Queue TBB concurrent_queue
 #   8. Stack NOBLE Lock-Free B           9. Stack NOBLE Lock-Free ELIM
 #   10. Bag NOBLE Lock-Free BB          11. Pool NOBLE Lock-Free EDTREE
-ALGORITHMS="0 1 2 3 4 5 6 7 8 9 10 11"
-#ALGORITHMS="9"
+#ALGORITHMS="0 1 2 3 4 5 6 7 8 9 10 11"
+ALGORITHMS="CASEALG"
 # Patterns:
 #   0. N/2 Producer - N/2 Consumer threads. CPU-heavy producers
 PATTERNS="0"
 # Contention: 0. 2x2; 1. 4x4; 2. 8x8; 3. 16x16; ...
 CONTENTIONS="0 1 2 3"
-# Pinning 1 means FILL.
+# Pinning: -1. NONE. (default);        0.  FILL PU per socket;
+#           1.  FILL CORE per socket;  2.  JUMP socket.
 PINNING="1"
 
-export RAPLSAMPLE="$HOME/EXCESS-software/state-record-tool/read-rapl-likwid -d $SAMPLEDURATION"
+export RAPLSAMPLE="$HOME/EXCESS-software/state-record-tool/read-rapl-likwid -s 10 -d $SAMPLEDURATION"
 export TEMPSAMPLE="$HOME/EXCESS-software/state-record-tool/read-coretemp -d $SAMPLEDURATION"
 
-#for Frequency in $FREQUENCIES; do
-    # Set the CPU frequency. How is this done one the HLRS EXCESS cluster?
+for Frequency in $FREQUENCIES; do
+    # Set the CPU frequency.
+    likwid-setFrequencies -f $Frequency
 
     sleep 5s
     echo Verifying CPU frequency setting.
-    #echo 'CPU frequencies:' >> $RMAINLOG; sudo cat /sys/bus/cpu/devices/cpu*/cpufreq/cpuinfo_cur_freq | tee -a $RMAINLOG -
+    likwid-setFrequencies -p
     sleep 5s
 
     for Iter in $REPEATS; do
         for Threads in $THREADS; do
             for Pattern in $PATTERNS; do
-		for Contention in $CONTENTIONS; do
+                for Contention in $CONTENTIONS; do
                     for Alg in $ALGORITHMS; do
-			Case=a$Alg-p$Pattern-c$Contention-f$Frequency-t$Threads-$Iter
-			echo "Starting $LOGBASE-$Case ..."
+                        Case=a$Alg-p$Pattern-c$Contention-f$Frequency-t$Threads-$Iter
+                        echo "Starting $LOGBASE-$Case ..."
 
-			RRAPLLOG=$LOGDIR/$LOGBASE-RAPL-$Case.csv
-			RTEMPLOG=$LOGDIR/$LOGBASE-TEMP-$Case.csv
-			RCACHELOG=$LOGDIR/$LOGBASE-CACHE-$Case.txt
-			ROUTLOG=$LOGDIR/$LOGBASE-OUT-$Case.txt
+                        RRAPLLOG=$LOGDIR/$LOGBASE-RAPL-$Case.csv
+                        RTEMPLOG=$LOGDIR/$LOGBASE-TEMP-$Case.csv
+                        RCACHELOG=$LOGDIR/$LOGBASE-CACHE-$Case.txt
+                        ROUTLOG=$LOGDIR/$LOGBASE-OUT-$Case.txt
                         
                         # Start sampling
                         ($RAPLSAMPLE -o $RRAPLLOG)&
-                        ($TEMPSAMPLE -o $RTEMPLOG)&
-			echo >> $RMAINLOG; echo >> $RMAINLOG;
-			date >> $RMAINLOG; echo $Case >> $RMAINLOG
+                        #($TEMPSAMPLE -o $RTEMPLOG)&
+                        echo >> $RMAINLOG; echo >> $RMAINLOG;
+                        date >> $RMAINLOG; echo $Case >> $RMAINLOG
 
-                        sleep 5s
+                        echo "$PROGRAM -e 1 -p $PINNING -t $Threads -i $Alg -s 0 $Pattern -s 1 $Contention" >> $RMAINLOG
+                        sleep 2s
 
-			$PROGRAM -e 1 -p $PINNING -t $Threads -i $Alg -s 0 $Pattern -s 1 $Contention 2>> $RMAINLOG > $ROUTLOG & (sleep $KILLDURATION; killall $PROGRAM &>> $RMAINLOG)
+                        $PROGRAM -e 1 -p $PINNING -t $Threads -i $Alg -s 0 $Pattern -s 1 $Contention 2>> $RMAINLOG > $ROUTLOG & (sleep $KILLDURATION; killall $PROGRAM &>> $RMAINLOG)
 
-			echo "... done"
-			sleep 10s
-			echo " "
-		    done
+                        echo "... done"
+                        sleep 3s
+                        echo " "
+                    done
                 done
             done
         done
     done
-#done
+done
+
+sleep 30s
 
 ###############################################################################
 echo "job is done"
