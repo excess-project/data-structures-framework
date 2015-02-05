@@ -1,5 +1,5 @@
 // Producer-Consumer microbenchmark for the experiment framework.
-//   Copyright (C) 2014  Anders Gidenstam
+//   Copyright (C) 2014 - 2015  Anders Gidenstam
 // Based on NBLExpQueue.cpp
 //   Copyright (C) 2011  Håkan Sundell
 //
@@ -253,7 +253,7 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
     // Run the experiment in short phases to handle large differences
     // in producer/consumer rates.
     // This only makes sense for fixed producer/consumer assignments.
-    long max_inserted = MAX_OPS-50;
+    long max_inserted = MAX_INSERTS;
     // The leader thread controls the phase switches.
     int leader        = 0;
     int phase_shift   = 0;
