@@ -23,7 +23,14 @@ function [alg threads pinning pattern pcpw throughputs RAPL_powers] = summarize_
   alg     = res(1);
   threads = res(2);
   pinning = res(3);
-  duration = res(4);
+  %% Distinguish between standard and phased mode via the length of res.
+  if (length(res) <= 12)
+    duration = res(4);
+  else
+    duration = res(14);
+    phases = res(15)
+    active_fraction = duration/res(4)
+  endif
   pattern = res(10);
   pcpw    = res(11:12);
   throughputs = res(7:9)./duration

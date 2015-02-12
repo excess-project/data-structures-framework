@@ -2,17 +2,19 @@
 %% Anders Gidenstam  2014 - 2015
 
 FREQs = [3];
+%ALGs = [3 6 10];
 %ALGs = [0 3 7 10];
 ALGs = 0:11;
-%PPWs = [1];
+%PPWs = [1 10 150 500 1000];
 PPWs = [1 2 3 4 5 7 10 20 50 150 500 1000];
-%CPWs = [1];
+%CPWs = [1 10 150 500 1000];
 CPWs = [1 2 3 4 5 7 10 20 50 150 500 1000];
-%THREADs = [16];
+%THREADs = [10 20];
 THREADs = [2 4 6 8 10 12 14 16 18 20];
 
 PLOT_POWER = 0;
 
+%% Algorithms: 0-11; Threads: 2 4 6 8 10 12 14 16 18 20
 RUNs1 = [
 '/home/andersg/HLRS/results/producerconsumer_2015-01-30_15.57'
 '/home/andersg/HLRS/results/producerconsumer_2015-01-30_16.49'
@@ -136,7 +138,31 @@ RUNs1 = [
 '/home/andersg/HLRS/results/producerconsumer_2015-02-04_02.30'
        ];
 
-RUNs = RUNs1;
+%% Algorithms: 0 2 3 6 10; Threads: 2 10 12 20
+RUNs2 = [
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_15.50'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_16.42'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_17.34'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_18.26'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_19.19'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_20.11'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_21.03'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_21.56'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_22.48'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-05_23.40'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_01.05'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_01.58'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_02.50'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_03.42'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_04.34'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_05.27'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_06.19'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_07.11'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_08.04'
+'/home/andersg/HLRS/results/producerconsumer_2015-02-06_08.56'
+       ];
+
+RUNs = RUNs2;
 
 i = 1;
 res = [];
