@@ -78,6 +78,9 @@ PRODPWS="1 2 3 4 5 7 10 20 50 150 500 1000"
 # Consumer parallel work: 0 -
 CONSPWS="1 2 3 4 5 7 10 20 50 150 500 1000"
 
+# Inserts per phase to restrict collection size. Set to 0 to disable.
+PHASEINSERTS="500000"
+
 # Pinning: -1. NONE. (default);        0.  FILL PU per socket;
 #           1.  FILL CORE per socket;  2.  JUMP socket.
 PINNING="1"
@@ -113,10 +116,10 @@ for Frequency in $FREQUENCIES; do
                         echo >> $RMAINLOG; echo >> $RMAINLOG;
                         date >> $RMAINLOG; echo $Case >> $RMAINLOG
 
-                        echo "$PROGRAM -e 0 -d $PRGDURATION -p $PINNING -t $Threads -i $Alg -s 0 $Pattern -s 1 $ProdPW -s 2 $ConsPW" >> $RMAINLOG
+                        echo "$PROGRAM -e 0 -d $PRGDURATION -p $PINNING -t $Threads -i $Alg -s 0 $Pattern -s 1 $ProdPW -s 2 $ConsPW -s 3 $PHASEINSERTS" >> $RMAINLOG
                         sleep 2s
 
-                        $PROGRAM -e 0 -d $PRGDURATION -p $PINNING -t $Threads -i $Alg -s 0 $Pattern -s 1 $ProdPW -s 2 $ConsPW 2>> $RMAINLOG > $ROUTLOG & (sleep $KILLDURATION; killall $PROGRAM &>> $RMAINLOG)
+                        $PROGRAM -e 0 -d $PRGDURATION -p $PINNING -t $Threads -i $Alg -s 0 $Pattern -s 1 $ProdPW -s 2 $ConsPW -s 3 $PHASEINSERTS 2>> $RMAINLOG > $ROUTLOG & (sleep $KILLDURATION; killall $PROGRAM &>> $RMAINLOG)
 
                         echo "... done"
                         sleep 3s
