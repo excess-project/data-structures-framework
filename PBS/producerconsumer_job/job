@@ -1,6 +1,6 @@
 #!/bin/sh -f
 # name of the job
-#PBS -N producer-consumer_CASETHREADS_threads
+#PBS -N producer-consumer_algCASEALG_CASETHREADS_threads
 # use the complete path to the standard output files
 #PBS -o /nas_home/andersg/EXCESS-software/data-structures-framework/PBS/producerconsumer_job/$PBS_JOBID.out
 #PBS -e /nas_home/andersg/EXCESS-software/data-structures-framework/PBS/producerconsumer_job/$PBS_JOBID.err 
