@@ -1,5 +1,5 @@
 // Producer-Consumer microbenchmark for the experiment framework.
-//   Copyright (C) 2014  Anders Gidenstam
+//   Copyright (C) 2014 - 2015  Anders Gidenstam
 // Based on NBLExpQueue.h
 //   Copyright (C) 2011  Håkan Sundell
 //
@@ -13,6 +13,7 @@ public:
   NBLExpProducerConsumer(void);
   virtual ~NBLExpProducerConsumer(void);
   virtual string GetExperimentName();
+  virtual string GetCaseName();
   virtual vector<string> GetParameters();
   virtual vector<string> GetParameterValues(int pno);
   virtual int  GetParameter(int pno);

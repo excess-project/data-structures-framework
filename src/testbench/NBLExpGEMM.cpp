@@ -1,5 +1,5 @@
 // Matrix-matrix multiplication benchmark for the experiment framework.
-//   Copyright (C) 2014  Anders Gidenstam
+//   Copyright (C) 2014 - 2015  Anders Gidenstam
 //
 #ifdef USE_BLAS
 
@@ -63,6 +63,14 @@ NBLExpGEMM::~NBLExpGEMM(void)
 string NBLExpGEMM::GetExperimentName()
 {
   return string("GEMM");
+}
+
+string NBLExpGEMM::GetCaseName()
+{
+  std::stringstream ss;
+  ss << "-N" << N
+     << "-Nwu" << Nwu;
+  return ss.str();
 }
 
 vector<string> NBLExpGEMM::GetParameters()

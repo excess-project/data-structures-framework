@@ -1,7 +1,8 @@
 // Mandelbrot application benchmark for the experiment framework.
 //   Copyright (C) 2011  Håkan Sundell
-//                 2014  Anders Gidenstam (Adaptation to the CLI frontend and
-//                                         ProducerConsumer base class.)
+//   Copyright (C) 2014 - 2015  Anders Gidenstam (Adaptation to the CLI
+//                                                frontend and ProducerConsumer
+//                                                base class.)
 //
 
 #pragma once
@@ -13,6 +14,7 @@ public:
   NBLExpApplicationMandelbrot(void);
   virtual ~NBLExpApplicationMandelbrot(void);
   virtual string GetExperimentName();
+  virtual string GetCaseName();
   virtual vector<string> GetParameters();
   virtual vector<string> GetParameterValues(int pno);
   virtual int  GetParameter(int pno);

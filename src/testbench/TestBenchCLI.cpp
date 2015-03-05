@@ -18,6 +18,13 @@
 
 #include "primitives.h"
 
+#ifdef USE_EXCESS_MF
+extern "C" {
+#include <mf_api.h>
+}
+static int useMF = 0;
+#endif
+
 // Machine configuration for pinning.
 // NOTE: The enumeration order of PUs may differ by
 //       architecture and kernel version.
@@ -64,6 +71,13 @@ int main(int argc, char** argv)
   experiment = new NBLExpProducerConsumer();
   process_arguments(argc, argv);
 
+#ifdef USE_EXCESS_MF
+  if (useMF) {
+    // Prepare the MF API.
+    mf_api_initialize(EXCESSMFURL);
+  }
+#endif
+
   perform_experiment();
 
   delete experiment;
@@ -86,6 +100,18 @@ static void perform_experiment()
     //std::cout << "Preparing " <<
     //  experiment->GetImplementations()[current_implementation] << "...";
 
+#ifdef USE_EXCESS_MF
+    // Prepare experiment case name.
+    std::stringstream ss;
+    ss << experiment->GetExperimentName()
+       << "-i" << current_implementation
+       << "-t" << nrThreads
+       << "-p" << pinning
+       << experiment->GetCaseName();
+
+    string casename = ss.str();
+#endif
+
     experiment->InitImplementationNr(current_implementation);
 
     // PERFORM EXPERIMENT
@@ -104,6 +130,14 @@ static void perform_experiment()
       usleep(100);
     }
     //std::cout << "starting...";
+
+#ifdef USE_EXCESS_MF
+    if (useMF) {
+      // Send start of case signal to the MF.
+      mf_api_start_profiling(casename.c_str());
+    }
+#endif
+
     clock_gettime(CLOCK_REALTIME, &start_time);
     go=1;
     //std::cout << "started...";
@@ -116,6 +150,13 @@ static void perform_experiment()
     for (int i=0;i<nrThreads; i++)
       pthread_join(thread[i], 0);
     //std::cout << "done." << std::endl;
+
+#ifdef USE_EXCESS_MF
+    if (useMF) {
+      // Send end of case signal to the MF.
+      mf_api_stop_profiling(casename.c_str());
+    }
+#endif
 
     double duration =
       (double)(end_time.tv_sec - start_time.tv_sec) +
@@ -239,6 +280,10 @@ static void process_arguments(int argc, char** argv)
         print_usage(argc, argv);
         exit(-1);
       }
+#ifdef USE_EXCESS_MF
+    } else if (arg.compare("-mf") == 0) {
+      useMF = 1;
+#endif
     } else {
       std::cerr << "Error: Unknown argument '" << argv[i] << "'." << std::endl;
       print_usage(argc, argv);
@@ -319,6 +364,10 @@ static void print_usage(int argc, char** argv)
       }
     }
   }
+#ifdef USE_EXCESS_MF
+  cout << "  -mf               Use the EXCESS monitoring framework."
+       << endl;
+#endif
   cout << endl;
   cout << "Output legend: ";
   print_output_legend();

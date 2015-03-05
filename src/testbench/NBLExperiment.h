@@ -1,6 +1,7 @@
 // Noble/EXCESS experiment framework.
 //   Copyright (C) 2011  Håkan Sundell
-//   Copyright (C) 2014  Anders Gidenstam (adapted for the EXCESS framework)
+//   Copyright (C) 2014 - 2015  Anders Gidenstam (adapted for the EXCESS
+//                                                framework)
 #pragma once
 
 #include <string>
@@ -18,6 +19,7 @@ public:
   NBLExperiment(void);
   virtual ~NBLExperiment(void);
   virtual string GetExperimentName() = 0;
+  virtual string GetCaseName() = 0;
   virtual void SetNrThreads(int nrOfThreads) = 0;
   virtual vector<string> GetImplementations() = 0;
 

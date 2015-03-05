@@ -1,8 +1,6 @@
 // Mandelbrot application benchmark for the experiment framework.
 //   Copyright (C) 2011  Håkan Sundell
-//   Copyright (C) 2014  Anders Gidenstam (Adaptation to the new CLI frontend,
-//                                         improved code and configuration at
-//                                         runtime.)
+//   Copyright (C) 2014 - 2015  Anders Gidenstam
 //
 
 #include "NBLExpMandelbrot.h"
@@ -101,6 +99,14 @@ NBLExpApplicationMandelbrot::~NBLExpApplicationMandelbrot(void)
 string NBLExpApplicationMandelbrot::GetExperimentName()
 {
   return string("ApplicationMandelbrot");
+}
+
+string NBLExpApplicationMandelbrot::GetCaseName()
+{
+  std::stringstream ss;
+  ss << "-com.pat." << PATTERN_NR
+     << "-cont." << CONTENTION_NR;
+  return ss.str();
 }
 
 vector<string> NBLExpApplicationMandelbrot::GetParameters()

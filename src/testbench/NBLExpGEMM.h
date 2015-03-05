@@ -1,5 +1,5 @@
 // Matrix-matrix multiplication benchmark for the EXCESS experiment framework.
-//   Copyright (C) 2014  Anders Gidenstam
+//   Copyright (C) 2014 - 2015  Anders Gidenstam
 //
 #pragma once
 #include "NBLExpProducerConsumerBase.h"
@@ -10,6 +10,7 @@ public:
   NBLExpGEMM(void);
   ~NBLExpGEMM(void);
   virtual string GetExperimentName();
+  virtual string GetCaseName();
   virtual vector<string> GetParameters();
   virtual vector<string> GetParameterValues(int pno);
   virtual int  GetParameter(int pno);

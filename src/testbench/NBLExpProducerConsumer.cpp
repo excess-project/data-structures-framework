@@ -103,8 +103,19 @@ NBLExpProducerConsumer::~NBLExpProducerConsumer(void)
   delete[] phases;
 }
 
-string NBLExpProducerConsumer::GetExperimentName() {
+string NBLExpProducerConsumer::GetExperimentName()
+{
   return string("ProducerConsumer");
+}
+
+string NBLExpProducerConsumer::GetCaseName()
+{
+  std::stringstream ss;
+  ss << "-com.pat." << COMM_NR
+     << "-Ppw" << PRODUCER_PW
+     << "-Cpw" << CONSUMER_PW
+     << "-maxins." << MAX_INSERTS;
+  return ss.str();
 }
 
 vector<string> NBLExpProducerConsumer::GetParameters()
