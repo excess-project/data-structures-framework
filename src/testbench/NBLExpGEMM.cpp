@@ -1,6 +1,8 @@
 // Matrix-matrix multiplication benchmark for the experiment framework.
 //   Copyright (C) 2014  Anders Gidenstam
 //
+#ifdef USE_BLAS
+
 #include "NBLExpGEMM.h"
 
 #include <iostream>
@@ -278,3 +280,5 @@ static int  VerifyGEMM(float *A, float *B, float *C, float* Src, int n)
   }
   return 1;
 }
+
+#endif

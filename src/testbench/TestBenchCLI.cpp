@@ -13,8 +13,8 @@
 #include <sched.h>
 
 #include "NBLExpProducerConsumer.h"
-#include "NBLExpGEMM.h"
 #include "NBLExpMandelbrot.h"
+#include "NBLExpGEMM.h"
 
 #include "primitives.h"
 
@@ -150,34 +150,35 @@ static void process_arguments(int argc, char** argv)
       exit(0);
     } else if (arg.compare("-e") == 0) {
       int e;
-      if ((++i < argc) && try_parse(string(argv[i]), e) &&
-          (0 <= e) && (e <= 2)) {
+      if ((++i < argc) && try_parse(string(argv[i]), e)) {
         switch (e) {
+        case 0:
+          // Keep the producer-consumer experiment.
+          break;
         case 1:
           experimentNr = e;
           delete experiment;
           experiment = new NBLExpApplicationMandelbrot();
           break;
+#ifdef USE_BLAS
         case 2:
           experimentNr = e;
           delete experiment;
           experiment = new NBLExpGEMM();
           break;
+#endif
         default:
-          // Keep the producer-consumer experiment.
-          break;
+          std::cerr << "Error: Bad experiment# given with -e." << std::endl;
+          print_usage(argc, argv);
+          exit(-1);
         }
-      } else {
-        std::cerr << "Bad experiment# given with -e." << std::endl;
-        print_usage(argc, argv);
-        exit(-1);
       }
     } else if (arg.compare("-t") == 0) {
       int t;
       if ((++i < argc) && try_parse(string(argv[i]), t) && (0 < t)) {
         nrThreads = t;
       } else {
-        std::cerr << "Bad #thread given with -t." << std::endl;
+        std::cerr << "Error: Bad #thread given with -t." << std::endl;
         print_usage(argc, argv);
         exit(-1);
       }
@@ -187,7 +188,7 @@ static void process_arguments(int argc, char** argv)
           (0 <= t) && (t < experiment->GetImplementations().size())) {
         active_implementations.push_back(t);
       } else {
-        std::cerr << "Bad implementation# given with -i." << std::endl;
+        std::cerr << "Error: Bad implementation# given with -i." << std::endl;
         print_usage(argc, argv);
         exit(-1);
       }
@@ -197,7 +198,8 @@ static void process_arguments(int argc, char** argv)
           (0 < seconds)) {
         expDuration = (useconds_t)seconds * 1000000;
       } else {
-        std::cerr << "Bad experiment duration given with -d." << std::endl;
+        std::cerr << "Error: Bad experiment duration given with -d."
+                  << std::endl;
         print_usage(argc, argv);
         exit(-1);
       }
@@ -207,7 +209,7 @@ static void process_arguments(int argc, char** argv)
           (NONE <= strategy) && (strategy <= JUMP_SOCKET)) {
         pinning = (pinning_strategy_t)strategy;
       } else {
-        std::cerr << "Bad pinning strategy given with -p." << std::endl;
+        std::cerr << "Error: Bad pinning strategy given with -p." << std::endl;
         print_usage(argc, argv);
         exit(-1);
       }
@@ -226,19 +228,19 @@ static void process_arguments(int argc, char** argv)
           experiment->SetParameter(pno, value);
           ok = 1;
         } else {
-          std::cerr << "Bad value given with -s for parameter " << pno
+          std::cerr << "Error: Bad value given with -s for parameter " << pno
                     << "(" << experiment->GetParameters()[pno] << ")."
                     << std::endl;
         }
       } else {
-        std::cerr << "Bad parameter# given with -s." << std::endl;
+        std::cerr << "Error: Bad parameter# given with -s." << std::endl;
       }
       if (!ok) {
         print_usage(argc, argv);
         exit(-1);
       }
     } else {
-      std::cerr << "Unknown argument '" << argv[i] << "'." << std::endl;
+      std::cerr << "Error: Unknown argument '" << argv[i] << "'." << std::endl;
       print_usage(argc, argv);
       exit(-1);
     }
@@ -251,6 +253,7 @@ static void print_usage(int argc, char** argv)
   using std::cout;
   using std::endl;
 
+  cout << endl;
   cout << "EXCESS data structures experiment framework." << endl;
   //cout << "  Copyright (C) 2011 - 2015  Anders Gidenstam" << endl;
   //cout << "  Copyright (C) 2011         Håkan Sundell" << endl;
@@ -270,9 +273,11 @@ static void print_usage(int argc, char** argv)
     cout << "                      " << "1.  " << "Mandelbrot application."
          << ((experimentNr == 1) ? " (selected)" : "")
          << endl;
+#ifdef USE_BLAS
     cout << "                      " << "2.  " << "SGEMM microbenchmark."
          << ((experimentNr == 2) ? " (selected)" : "")
          << endl;
+#endif
   }
 
   cout << "  -l                Print the output legend for the selected experiment and exit." << endl;

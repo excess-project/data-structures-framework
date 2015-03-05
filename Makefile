@@ -10,11 +10,19 @@ TBBDIR = /opt/IntelTBB/tbb
 TBBLIB = -Wl,-rpath,$(TBBDIR)/build/linux_intel64_gcc_cc4.6_libc2.15_kernel3.13.0_release -L$(TBBDIR)/build/linux_intel64_gcc_cc4.6_libc2.15_kernel3.13.0_release/ -ltbb
 
 # Support libraries
+#  OpenBLAS
 BLASDIR = /opt/OpenBLAS/st
 BLASLIB = $(BLASDIR)/lib/libopenblas.a
 
-CFLAGS = -DLINUX64_X86 -I$(NOBLEDIR)/Include/ -I$(NOBLEDIR)/Src/ -I$(TBBDIR)/include -O2 -fpermissive -march=native -DNDEBUG -I$(BLASDIR)/include
-TGFLAGS = -DUSE_NOBLE -DUSE_TBB -DNOSAVEMANDELBROT 
+# General testbench configuration
+TGFLAGS += -DUSE_NOBLE
+TGFLAGS += -DUSE_TBB
+TGFLAGS += -DUSE_BLAS
+TGFLAGS += -DNOSAVEMANDELBROT
+
+# Compiler settings
+CFLAGS = -DLINUX64_X86 -O2 -fpermissive -march=native -DNDEBUG
+CFLAGS += -I$(NOBLEDIR)/Include/ -I$(NOBLEDIR)/Src/ -I$(TBBDIR)/include -I$(BLASDIR)/include
 
 LDFLAGS = $(NOBLELIB) $(TBBLIB) $(BLASLIB) -lrt
 

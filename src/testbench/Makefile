@@ -1,7 +1,9 @@
 # Makefile for the testbench.
 
 # Makefile
-OBJS = NBLExpProducerConsumerBase.o NBLExpProducerConsumer.o NBLExpMandelbrot.o NBLExpGEMM.o NBLExperiment.o TestBenchCLI.o
+OBJS = NBLExperiment.o TestBenchCLI.o
+OBJS += NBLExpProducerConsumerBase.o NBLExpProducerConsumer.o NBLExpMandelbrot.o
+OBJS += NBLExpGEMM.o
 
 
 all: testbench
