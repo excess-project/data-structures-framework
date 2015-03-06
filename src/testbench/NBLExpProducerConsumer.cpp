@@ -340,12 +340,12 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
       }
     }
     if (leader) {
-      // Count the final unfinished phase.
-      int start = phase % MAX_PHASES;
-      int end   = (++phase) % MAX_PHASES;
-      clock_gettime(CLOCK_REALTIME, &now);
-      phases[end] = now.tv_sec + 1e-9*now.tv_nsec;
+      // Count the final unfinished phase IFF it is an active phase.
       if (active) {
+        int start = phase % MAX_PHASES;
+        int end   = (++phase) % MAX_PHASES;
+        clock_gettime(CLOCK_REALTIME, &now);
+        phases[end] = now.tv_sec + 1e-9*now.tv_nsec;
         time_active += (phases[end] - phases[start]);
       }
       // Store the active time and number of phases.
