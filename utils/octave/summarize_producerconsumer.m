@@ -14,7 +14,7 @@ THREADs = [2 4 6 8 10 12 14 16 18 20];
 
 PLOT_POWER = 0;
 
-%% Algorithms: 0-11; Threads: 2 4 6 8 10 12 14 16 18 20
+%% Algorithms: 0-11; Threads: 2 4 6 8 10 12 14 16 18 20; Pinning 1
 RUNs1 = [
 '/home/andersg/HLRS/results/producerconsumer_2015-01-30_15.57'
 '/home/andersg/HLRS/results/producerconsumer_2015-01-30_16.49'
@@ -138,7 +138,7 @@ RUNs1 = [
 '/home/andersg/HLRS/results/producerconsumer_2015-02-04_02.30'
        ];
 
-%% Algorithms: 0 2 3 6 10; Threads: 2 10 12 20
+%% Algorithms: 0 2 3 6 10; Threads: 2 10 12 20; Pinning: 1
 RUNs2 = [
 '/home/andersg/HLRS/results/producerconsumer_2015-02-05_15.50'
 '/home/andersg/HLRS/results/producerconsumer_2015-02-05_16.42'
@@ -162,7 +162,55 @@ RUNs2 = [
 '/home/andersg/HLRS/results/producerconsumer_2015-02-06_08.56'
        ];
 
-RUNs = RUNs2;
+%% Algorithms: 0 2 3 6 10; Threads: 2 10 12 20; Pinning: 1
+RUNs3 = [
+'/home/andersg/HLRS/results/producerconsumer_2015-03-06_17.28'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-06_18.20'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-06_19.13'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-06_20.05'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-06_20.57'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-06_21.51'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-06_22.40'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-06_23.29'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_00.51'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_01.40'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_02.29'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_03.18'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_04.07'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_04.56'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_05.45'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_06.34'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_07.23'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_08.12'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_09.01'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-07_09.50'
+       ];
+
+%% Algorithms: 0 2 3 6 10; Threads: 2 10 12 20; Pinning: 2
+RUNs4 = [
+'/home/andersg/HLRS/results/producerconsumer_2015-03-10_16.09'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-10_17.02'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-10_17.54'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-10_18.47'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-10_19.39'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-10_20.31'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-10_21.24'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-10_22.16'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-10_23.08'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_00.01'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_01.26'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_02.18'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_03.11'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_04.03'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_04.56'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_05.48'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_06.40'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_07.33'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_08.25'
+'/home/andersg/HLRS/results/producerconsumer_2015-03-11_09.17'
+       ];
+
+RUNs = RUNs4;
 
 i = 1;
 res = [];
@@ -186,10 +234,10 @@ for d = 1:size(RUNs)(1)
 
                 [info, err] = stat(resfile);
                 if (err == 0)
-                  [alg threads pinning pattern pcpw throughputs RAPL_powers] = summarize_producerconsumer_case(basename, algname, casename, PLOT_POWER);
+                  [alg threads pinning pattern pcpw throughputs RAPL_powers RAPL_powers_biased_coef_of_var] = summarize_producerconsumer_case(basename, algname, casename, PLOT_POWER);
                   %printf("succeeded\n");
 
-                  res(i,:) = [f alg threads pinning pattern pcpw throughputs RAPL_powers];
+                  res(i,:) = [f alg threads pinning pattern pcpw throughputs RAPL_powers RAPL_powers_biased_coef_of_var];
                   i = i+1;
                 else
                   %printf("failed\n");

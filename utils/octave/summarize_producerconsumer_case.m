@@ -1,7 +1,7 @@
 %% Summarize the result of one Producer-Consumer testbench case.
 %% Anders Gidenstam  2014 - 2015
 
-function [alg threads pinning pattern pcpw throughputs RAPL_powers] = summarize_producerconsumer_case(basename, algname, casename, plot_power)
+function [alg threads pinning pattern pcpw throughputs RAPL_powers RAPL_powers_biased_coef_of_var] = summarize_producerconsumer_case(basename, algname, casename, plot_power)
 
   res = load_case_result(basename, algname, casename);
   [t_rapl RAPL_PKG_power RAPL_CPU_power RAPL_UNCORE_power RAPL_DRAM_power] = \
@@ -16,8 +16,15 @@ function [alg threads pinning pattern pcpw throughputs RAPL_powers] = summarize_
   RAPL_all = [RAPL_PKG_power RAPL_CPU_power RAPL_UNCORE_power RAPL_DRAM_power];
 
   [basename algname '-' casename ' pinning=' sprintf("%d",res(3))]
-  RAPL_powers_mean = mean(RAPL_all(RAPL_t_avg,:))
-  RAPL_powers_std = std(RAPL_all(RAPL_t_avg,:))
+  RAPL_powers_mean = mean(RAPL_all(RAPL_t_avg,:));
+  RAPL_powers_std = std(RAPL_all(RAPL_t_avg,:));
+  RAPL_powers_biased_coef_of_var = RAPL_powers_std ./ RAPL_powers_mean;
+
+  RAPL_mem_mean = mean(RAPL_DRAM_power(RAPL_t_avg,1) + RAPL_DRAM_power(RAPL_t_avg,2))
+  RAPL_mem_std = std(RAPL_DRAM_power(RAPL_t_avg,1) + RAPL_DRAM_power(RAPL_t_avg,2));
+  RAPL_mem_biased_coef_of_var = RAPL_mem_std ./ RAPL_mem_mean
+
+  
 
   %% Prepare the output
   alg     = res(1);
