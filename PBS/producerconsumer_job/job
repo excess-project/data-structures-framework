@@ -25,9 +25,10 @@ echo "PBS_JOBNAME=$PBS_JOBNAME # The job name supplied by the user."
 
 # load module power/mf_shared
 # and get the new dbkey from the monitoring framework
-module load power/mf_shared
-DBKEY=$( get_unique_dbkey -d ${HOME}/.mf/dbkey/ -f ${PBS_JOBID} )
-echo "Monitoring framework $DBKEY"
+module load power/mf_shared/20
+DBKEY_STRING=$( get_unique_dbkey -d ${HOME}/.mf/dbkey/ -f ${PBS_JOBID} )
+DBKEY=$( echo ${DBKEY_STRING}| awk -v N=$N '{print $2}' )
+echo "Monitoring framework DBKEY = $DBKEY"
 
 # Job environment
 export JOBDIR=/nas_home/andersg/EXCESS-software/data-structures-framework/PBS/producerconsumer_job/
