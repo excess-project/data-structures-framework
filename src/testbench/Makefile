@@ -4,6 +4,7 @@
 OBJS = NBLExperiment.o TestBenchCLI.o
 OBJS += NBLExpProducerConsumerBase.o NBLExpProducerConsumer.o NBLExpMandelbrot.o
 OBJS += NBLExpGEMM.o
+OBJS += NBLExpDictionaryBase.o NBLExpDictionary.o
 
 
 all: testbench
