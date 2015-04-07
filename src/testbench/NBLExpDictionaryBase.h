@@ -12,6 +12,12 @@
 #include <tbb/concurrent_hash_map.h>
 #endif
 
+#ifdef USE_CCKHT
+#include <globaldefinitions.h>
+#include <concckhashtable.h>
+#include <BucketizeConcCK.h>
+#endif
+
 // Abstract base class for experiments that use Dictionary collections.
 class NBLExpDictionaryBase :
   public NBLExperiment
@@ -63,6 +69,10 @@ private:
 #endif
 #ifdef USE_TBB
   tbb::concurrent_hash_map<int, void *> *tbbhashmap;
+#endif
+#ifdef USE_CCKHT
+  ConcCukooHashtable<int, void *, HASH_INT, HASH_INT1> *cckhashtable;
+  BucketizeConcCK<int, void *>    *bcckhashtable;  
 #endif
 
 protected: 

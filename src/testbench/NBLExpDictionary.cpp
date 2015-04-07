@@ -135,8 +135,8 @@ void NBLExpDictionary::CreateScenario()
   delete initialState;
   initialState = new std::map<int,void*>();
   for (int i=0 ; i < INITIAL_SIZE; i++) {
-    int   key = rand() % KEY_SPACE;
-    void* value = (void*)(key+1);
+    int   key = (rand() % KEY_SPACE) + 1;
+    void* value = (void*)key;
     initialState->insert(std::pair<int,void*>(key, value));
   }
 
@@ -144,7 +144,7 @@ void NBLExpDictionary::CreateScenario()
     for (int i=0; i < MAX_OPS; i++) {
       opSchedule[t][i].first =
         (rand() < RAND_MAX*(double)UPDATE_PERCENTAGE/100.0) ? UPDATE :  LOOKUP;
-      opSchedule[t][i].second = rand() % KEY_SPACE;
+      opSchedule[t][i].second = (rand() % KEY_SPACE) + 1;
     }
   }
 }
@@ -201,7 +201,7 @@ void NBLExpDictionary::RunImplementationNr(int nr, int threadID)
         }
       } else {
         updating = false;
-        Insert(handle, key, (void*)(key+1), countInsert);
+        Insert(handle, key, (void*)key, countInsert);
         i++;
       }
       break;
