@@ -8,6 +8,7 @@
 #include <limits>
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
 #include <pthread.h>
 #include <unistd.h>
 #include <sched.h>

@@ -16,6 +16,13 @@ TBBLIB = -Wl,-rpath,$(TBBDIR)/build/linux_intel64_gcc_cc4.6_libc2.15_kernel3.13.
 #CCKHT = /opt/MiscDS/CCKHashtable
 #CCKHTLIB = $(CCKHT)/libCCKHashtable.a
 
+# Hash map implementations from
+#  [Herlihy, M., Shavit, N. and M. Tzafrir, "Hopscotch Hashing".
+#   In the Proc. of the 22nd International Symposium on Distributed Computing
+#   (DISC 2008), pp. 350-364, 2008].
+#HSHT = /opt/MiscDS/HSHashtable
+#HSHTLIB = $(HSHT)/libHSHashtable.a
+
 # Support libraries
 #  OpenBLAS
 BLASDIR = /opt/OpenBLAS/st
@@ -30,6 +37,7 @@ EXCESSMFLIB = #-Wl,-rpath=$(EXCESSMFDIR)/lib $(EXCESSMFDIR)/lib/libmf.so
 TGFLAGS += -DUSE_NOBLE
 TGFLAGS += -DUSE_TBB
 #TGFLAGS += -DUSE_CCKHT
+#TGFLAGS += -DUSE_HSHT
 TGFLAGS += -DUSE_BLAS
 TGFLAGS += -DNOSAVEMANDELBROT
 #TGFLAGS += -DUSE_EXCESS_MF
@@ -39,10 +47,12 @@ CFLAGS = -DLINUX64_X86 -O2 -fpermissive -march=native -DNDEBUG
 CFLAGS += -I$(NOBLEDIR)/Include/ -I$(NOBLEDIR)/Src/
 CFLAGS += -I$(TBBDIR)/include -I$(BLASDIR)/include
 CFLAGS += -I$(CCKHT)
+CFLAGS += -I$(HSHT) -I$(HSHT)/data_structures
 CFLAGS += -I$(EXCESSMFDIR)/include -DEXCESSMFURL=$(EXCESSMFURL)
 
 LDFLAGS = $(NOBLELIB) $(TBBLIB) $(BLASLIB) $(EXCESSMFLIB) -lrt
 LDFLAGS += $(CCKHTLIB)
+LDFLAGS += $(HSHTLIB)
 
 export
 

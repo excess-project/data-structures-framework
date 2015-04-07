@@ -33,6 +33,13 @@ typedef BucketizeConcCK<int,void*>  cckht_bcck_hash_map_t;
 #define CCKHT_STATUS " (unavailable)"
 #endif
 
+#ifdef USE_HSHT
+#define HSHT_STATUS
+#else
+#define HSHT_STATUS " (unavailable)"
+#endif
+
+
 typedef void NBLHandle;
 
 #ifdef USE_NOBLE
@@ -128,9 +135,6 @@ static bool CCKHashMapTryRemove(NBLHandle *handle,
     return false;
   }
 }
-static void CCKHashMapFreeHandle(void *handle)
-{
-}
 static bool BCCKHashMapInsert(NBLHandle *handle,
                               int key, void *value,
                               long& count)
@@ -166,7 +170,121 @@ static bool BCCKHashMapTryRemove(NBLHandle *handle,
     return false;
   }
 }
-static void BCCKHashMapFreeHandle(void *handle)
+static void CCKHashMapFreeHandle(void *handle)
+{
+}
+#endif
+
+#ifdef USE_HSHT
+static bool HSBHHashMapInsert(NBLHandle *handle,
+                              int key, void *value,
+                              long& count)
+{
+  void* ret = static_cast<HSBitmapHopscotchHashMap_t*>(handle)->
+    putIfAbsent(key, value);
+  count++;
+  return (ret == 0);
+}
+static bool HSBHHashMapLookup(NBLHandle *handle,
+                              int key, void*& value,
+                              long& countOk, long& countNotFound)
+{
+  if (static_cast<HSBitmapHopscotchHashMap_t*>(handle)->
+          containsKey(key)) {
+    // FIXME: value is not set.
+    countOk++;
+    return true;
+  } else {
+    countNotFound++;
+    return false;
+  }
+}
+static bool HSBHHashMapTryRemove(NBLHandle *handle,
+                                 int key, void*& value,
+                                 long& countOk, long& countNotFound)
+{
+  if (0 !=
+      (value = static_cast<HSBitmapHopscotchHashMap_t*>(handle)->remove(key))) {
+    countOk++;
+    return true;
+  } else {
+    countNotFound++;
+    return false;
+  }
+}
+static bool HSCHashMapInsert(NBLHandle *handle,
+                             int key, void *value,
+                             long& count)
+{
+  void* ret = static_cast<HSChainedHashMap_t*>(handle)->
+    putIfAbsent(key, value);
+  count++;
+  return (ret == 0);
+}
+static bool HSCHashMapLookup(NBLHandle *handle,
+                             int key, void*& value,
+                             long& countOk, long& countNotFound)
+{
+  if (static_cast<HSChainedHashMap_t*>(handle)->
+          containsKey(key)) {
+    // FIXME: value is not set.
+    countOk++;
+    return true;
+  } else {
+    countNotFound++;
+    return false;
+  }
+}
+static bool HSCHashMapTryRemove(NBLHandle *handle,
+                                int key, void*& value,
+                                long& countOk, long& countNotFound)
+{
+  if (0 !=
+      (value = static_cast<HSChainedHashMap_t*>(handle)->remove(key))) {
+    countOk++;
+    return true;
+  } else {
+    countNotFound++;
+    return false;
+  }
+}
+static bool HSHHashMapInsert(NBLHandle *handle,
+                             int key, void *value,
+                             long& count)
+{
+  void* ret = static_cast<HSHopscotchHashMap_t*>(handle)->
+    putIfAbsent(key, value);
+  count++;
+  return (ret == 0);
+}
+static bool HSHHashMapLookup(NBLHandle *handle,
+                             int key, void*& value,
+                             long& countOk, long& countNotFound)
+{
+  if (static_cast<HSHopscotchHashMap_t*>(handle)->
+          containsKey(key)) {
+    // FIXME: value is not set.
+    countOk++;
+    return true;
+  } else {
+    countNotFound++;
+    return false;
+  }
+}
+static bool HSHHashMapTryRemove(NBLHandle *handle,
+                                int key, void*& value,
+                                long& countOk, long& countNotFound)
+{
+  if (0 !=
+      (value = static_cast<HSHopscotchHashMap_t*>(handle)->remove(key))) {
+    countOk++;
+    return true;
+  } else {
+    countNotFound++;
+    return false;
+  }
+}
+static void HSHashMapFreeHandle(void *handle)
 {
 }
 #endif
@@ -186,10 +304,16 @@ vector<string> NBLExpDictionaryBase::GetImplementations()
   vector<string> v;
   v.push_back(string("Dictionary NOBLE SkipList" NOBLE_STATUS));
   v.push_back(string("Dictionary TBB concurrent_hash_map" TBB_STATUS));
-  v.push_back(string("Dictionary CCKHT Concurrent Cukoo hash table"
+  v.push_back(string("Dictionary CCKHT Concurrent Cuckoo hash table"
                      CCKHT_STATUS));
-  v.push_back(string("Dictionary CCKHT Bucketized Concurrent Cukoo hash table"
+  v.push_back(string("Dictionary CCKHT Bucketized Concurrent Cuckoo hash table"
                      CCKHT_STATUS));
+  v.push_back(string("Dictionary HS bitmap hopscotch hash table"
+                     HSHT_STATUS));
+  v.push_back(string("Dictionary HS chained hash table"
+                     HSHT_STATUS));
+  v.push_back(string("Dictionary HS hopscotch hash table"
+                     HSHT_STATUS));
   return v;
 }
 
@@ -219,7 +343,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     break;
   case 2:
 #ifdef USE_CCKHT
-    cckhashtable = new cckht_cck_hash_map_t(100*MAX_CPUS);
+    cckhashtable = new cckht_cck_hash_map_t(MAX_DICTIONARY_SIZE);
 #else
     std::cerr << "Error: Compiled without CCKHT support!" << std::endl;
     exit(-1);
@@ -227,9 +351,33 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     break;
   case 3:
 #ifdef USE_CCKHT
-    bcckhashtable = new cckht_bcck_hash_map_t(100*MAX_CPUS);
+    bcckhashtable = new cckht_bcck_hash_map_t(MAX_DICTIONARY_SIZE);
 #else
     std::cerr << "Error: Compiled without CCKHT support!" << std::endl;
+    exit(-1);
+#endif
+    break;
+  case 4:
+#ifdef USE_HSHT
+    hsbhhashtable = new HSBitmapHopscotchHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
+#else
+    std::cerr << "Error: Compiled without HSHT support!" << std::endl;
+    exit(-1);
+#endif
+    break;
+  case 5:
+#ifdef USE_HSHT
+    hschashtable = new HSChainedHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
+#else
+    std::cerr << "Error: Compiled without HSHT support!" << std::endl;
+    exit(-1);
+#endif
+    break;
+  case 6:
+#ifdef USE_HSHT
+    hshhashtable = new HSHopscotchHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
+#else
+    std::cerr << "Error: Compiled without HSHT support!" << std::endl;
     exit(-1);
 #endif
     break;
@@ -261,7 +409,31 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     Insert = BCCKHashMapInsert;
     Lookup = BCCKHashMapLookup;
     TryRemove = BCCKHashMapTryRemove;
-    FreeHandle = BCCKHashMapFreeHandle;
+    FreeHandle = CCKHashMapFreeHandle;
+#endif
+    break;
+  case 4:
+#ifdef USE_HSHT
+    Insert = HSBHHashMapInsert;
+    Lookup = HSBHHashMapLookup;
+    TryRemove = HSBHHashMapTryRemove;
+    FreeHandle = HSHashMapFreeHandle;
+#endif
+    break;
+  case 5:
+#ifdef USE_HSHT
+    Insert = HSCHashMapInsert;
+    Lookup = HSCHashMapLookup;
+    TryRemove = HSCHashMapTryRemove;
+    FreeHandle = HSHashMapFreeHandle;
+#endif
+    break;
+  case 6:
+#ifdef USE_HSHT
+    Insert = HSHHashMapInsert;
+    Lookup = HSHHashMapLookup;
+    TryRemove = HSHHashMapTryRemove;
+    FreeHandle = HSHashMapFreeHandle;
 #endif
     break;
   }
@@ -290,6 +462,21 @@ NBLHandle *NBLExpDictionaryBase::ThreadInitImplementationNr(int nr)
     handle = bcckhashtable;
 #endif
     break;
+  case 4:
+#ifdef USE_HSHT
+    handle = hsbhhashtable;
+#endif
+    break;
+  case 5:
+#ifdef USE_HSHT
+    handle = hschashtable;
+#endif
+    break;
+  case 6:
+#ifdef USE_HSHT
+    handle = hshhashtable;
+#endif
+    break;
   }
   return handle;
 }
@@ -313,6 +500,21 @@ void NBLExpDictionaryBase::DeInitImplementationNr(int nr)
   case 3:
 #ifdef USE_CCKHT
     delete bcckhashtable;
+#endif
+    break;
+  case 4:
+#ifdef USE_HSHT
+    delete hsbhhashtable;
+#endif
+    break;
+  case 5:
+#ifdef USE_HSHT
+    delete hschashtable;
+#endif
+    break;
+  case 6:
+#ifdef USE_HSHT
+    delete hshhashtable;
 #endif
     break;
   }

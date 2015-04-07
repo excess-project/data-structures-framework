@@ -35,6 +35,7 @@ NBLExpDictionary::NBLExpDictionary(void)
 {
   KEY_SPACE = 1024;
   INITIAL_SIZE = 512;
+  MAX_DICTIONARY_SIZE = 4*INITIAL_SIZE;
   UPDATE_PERCENTAGE = 20;
   PARALLEL_WORK = 1;
   initialState = 0;
@@ -116,6 +117,7 @@ void NBLExpDictionary::SetParameter(int pno, int value)
     break;
   case 1:
     INITIAL_SIZE = value;
+    MAX_DICTIONARY_SIZE = 2*value;
     break;
   case 2:
     UPDATE_PERCENTAGE = value;

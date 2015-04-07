@@ -4,6 +4,8 @@
 #pragma once
 #include "NBLExperiment.h"
 
+#include <cmath>
+
 #ifdef USE_NOBLE
 #include "Noble.h"
 #endif
@@ -16,6 +18,14 @@
 #include <globaldefinitions.h>
 #include <concckhashtable.h>
 #include <BucketizeConcCK.h>
+#endif
+
+#ifdef USE_HSHT
+#define INTEL64 1
+#include <HSHashtable.h>
+#undef INTEL64
+#undef CAS64
+#undef CAS32
 #endif
 
 // Abstract base class for experiments that use Dictionary collections.
@@ -56,6 +66,7 @@ protected:
 
   // Experiment shared state.
   int NR_CPUS;
+  int MAX_DICTIONARY_SIZE;
 
   volatile long long countInsert;
   volatile long long countOkLookup;
@@ -74,9 +85,14 @@ private:
   ConcCukooHashtable<int, void *, HASH_INT, HASH_INT1> *cckhashtable;
   BucketizeConcCK<int, void *>    *bcckhashtable;  
 #endif
+#ifdef USE_HSHT
+  HSBitmapHopscotchHashMap_t *hsbhhashtable;
+  HSChainedHashMap_t *hschashtable;
+  HSHopscotchHashMap_t *hshhashtable;
+#endif
 
 protected: 
-  // For the currently configured producer-consumer collection. 
+  // For the currently configured dictionary collection. 
   InsertFunc Insert;
   TryRemoveFunc Lookup;
   TryRemoveFunc TryRemove;
