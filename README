@@ -41,6 +41,11 @@ HSHashtable
   The ChainedHashMap is GPL v2 or later.
   Consequently a binary incuding it may not be distributed.
 
+EXCESS Monitoring Framework client/agent
+  Copyright 2014, 2015, High Performance Computing Center, Stuttgart
+  The Apache License, Version 2.0.
+  The binary may be distributed.
+
 
 INSTALL
 -------
