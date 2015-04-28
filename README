@@ -1,9 +1,46 @@
 EXCESS data structures framework
 
- Copyright (C) 2014 Anders Gidenstam
- Copyright (C) 2011 Håkan Sundell    (Skeleton for the experiment framework)
+ Copyright (C) 2014 - 2015  Anders Gidenstam
+ Copyright (C) 2011  Håkan Sundell    (Skeleton for the experiment framework)
 
  License: Not decided yet.
+
+LICENSES OF DEPENDENCIES
+------------------------
+
+The following applies when the respective dependency is compiled in:
+
+NOBLE
+  Copyright (C) Parallel Scalable Solutions AB, http://www.non-blocking.com
+  All Rights Reserved.
+  The binary may not be distributed.
+
+OpenBLAS (See the LICENSE file in the OpenBLAS source archive)
+  Copyright (c) 2011-2014, The OpenBLAS Project. All rights reserved.
+  The binary may be distributed provided the above copyright statement is
+  included.
+
+Intel Threading Building Blocks:
+  Copyright 2005-2014 Intel Corporation.  All Rights Reserved.
+  GPL v2 or later with the "runtime exception".
+  The binary may be distributed.
+
+CCKHashtable
+  Copyright (C) 2014, Nhan Nguyen and Philippas Tsigas. All Rights Reserved.
+  The binary may not be distributed.
+
+HSHashtable
+  Copyright (C) 2008, Maurice Herlihy, Nir Shavit and Moran Tzafrir.
+
+  Permission to use, copy, modify and distribute this software and
+  its documentation for any purpose is hereby granted without fee,
+  provided that due acknowledgments to the authors are provided and
+  this permission notice appears in all copies of the software.
+  The software is provided "as is". There is no warranty of any kind.
+
+  The ChainedHashMap is GPL v2 or later.
+  Consequently a binary incuding it may not be distributed.
+
 
 INSTALL
 -------
@@ -16,5 +53,6 @@ INSTALL
    ./testbench -e 0 -h
    ./testbench -e 1 -h
    ./testbench -e 2 -h
+   ./testbench -e 3 -h
 
 
