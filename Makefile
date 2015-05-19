@@ -9,6 +9,11 @@ NOBLELIB = $(NOBLEDIR)/lib/Linux64_x86/libNOBLE64.a
 TBBDIR = /opt/IntelTBB/tbb
 TBBLIB = -Wl,-rpath,$(TBBDIR)/build/linux_intel64_gcc_cc4.6_libc2.15_kernel3.13.0_release -L$(TBBDIR)/build/linux_intel64_gcc_cc4.6_libc2.15_kernel3.13.0_release/ -ltbb
 
+# Search tree implementations from
+#  Phuong, UIT for EXCESS
+#ETLDIR = /opt/EXCESS/EXCESSTreeLibrary
+#ETLLIB = $(ETLDIR)/lib/libCBTree.a
+
 # Hash map implementations from
 #  [Nhan Nguyen and Philippas Tsigas, "Lock-free Cuckoo Hashing".
 #   In the Proceedings of the 34th International Conference on Distributed
@@ -36,6 +41,7 @@ EXCESSMFLIB = #-Wl,-rpath=$(EXCESSMFDIR)/lib $(EXCESSMFDIR)/lib/libmf.so
 # General testbench configuration
 TGFLAGS += -DUSE_NOBLE
 TGFLAGS += -DUSE_TBB
+#TGFLAGS += -DUSE_ETL
 #TGFLAGS += -DUSE_CCKHT
 #TGFLAGS += -DUSE_HSHT
 TGFLAGS += -DUSE_BLAS
@@ -45,12 +51,15 @@ TGFLAGS += -DNOSAVEMANDELBROT
 # Compiler settings
 CFLAGS = -DLINUX64_X86 -O2 -fpermissive -march=native -DNDEBUG
 CFLAGS += -I$(NOBLEDIR)/Include/ -I$(NOBLEDIR)/Src/
-CFLAGS += -I$(TBBDIR)/include -I$(BLASDIR)/include
+CFLAGS += -I$(TBBDIR)/include
+CFLAGS += -I$(ETLDIR)/include
 CFLAGS += -I$(CCKHT)
 CFLAGS += -I$(HSHT) -I$(HSHT)/data_structures
+CFLAGS += -I$(BLASDIR)/include
 CFLAGS += -I$(EXCESSMFDIR)/include -DEXCESSMFURL=$(EXCESSMFURL)
 
 LDFLAGS = $(NOBLELIB) $(TBBLIB) $(BLASLIB) $(EXCESSMFLIB) -lrt
+LDFLAGS += $(ETLLIB)
 LDFLAGS += $(CCKHTLIB)
 LDFLAGS += $(HSHTLIB)
 

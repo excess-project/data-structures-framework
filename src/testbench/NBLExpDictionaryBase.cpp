@@ -24,6 +24,12 @@ typedef tbb::concurrent_hash_map<int,void*> tbb_hash_map_t;
 #define TBB_STATUS " (unavailable)"
 #endif
 
+#ifdef USE_ETL
+#define ETL_STATUS
+#else
+#define ETL_STATUS " (unavailable)"
+#endif
+
 #ifdef USE_CCKHT
 #define CCKHT_STATUS
 
@@ -95,6 +101,45 @@ static bool TBBHashMapTryRemove(NBLHandle *handle,
   */
 }
 static void TBBHashMapFreeHandle(void *handle)
+{
+}
+#endif
+
+#ifdef USE_ETL
+static bool ETLCBTreeInsert(NBLHandle *handle,
+                            int key, void *value,
+                            long& count)
+{
+  int ret = cbtree_insert(static_cast<cbtree_t*>(handle), (void*)key, value);
+  count++;
+  return ret;
+}
+static bool ETLCBTreeLookup(NBLHandle *handle,
+                            int key, void*& value,
+                            long& countOk, long& countNotFound)
+{
+  if (value = cbtree_get(static_cast<cbtree_t*>(handle), (void*)key)) {
+    countOk++;
+    return true;
+  } else {
+    countNotFound++;
+    return false;
+  }
+}
+static bool ETLCBTreeTryRemove(NBLHandle *handle,
+                               int key, void*& value,
+                               long& countOk, long& countNotFound)
+{
+  if (cbtree_delete(static_cast<cbtree_t*>(handle), (void*)key)) {
+    countOk++;
+    // FIXME: Set the out parameter. Not supported by the API.
+    return true;
+  } else {
+    countNotFound++;
+    return false;
+  }
+}
+static void ETLCBTreeFreeHandle(void *handle)
 {
 }
 #endif
@@ -304,6 +349,7 @@ vector<string> NBLExpDictionaryBase::GetImplementations()
   vector<string> v;
   v.push_back(string("Dictionary NOBLE SkipList" NOBLE_STATUS));
   v.push_back(string("Dictionary TBB concurrent_hash_map" TBB_STATUS));
+  v.push_back(string("Dictionary ETL cbtree_t" ETL_STATUS));
   v.push_back(string("Dictionary CCKHT Concurrent Cuckoo hash table"
                      CCKHT_STATUS));
   v.push_back(string("Dictionary CCKHT Bucketized Concurrent Cuckoo hash table"
@@ -342,6 +388,15 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
 #endif
     break;
   case 2:
+#ifdef USE_ETL
+    cbsearchtree = cbtree_alloc();
+#else
+    std::cerr << "Error: Compiled without EXCESS Tree Library support!"
+              << std::endl;
+    exit(-1);
+#endif
+    break;
+  case 3:
 #ifdef USE_CCKHT
     cckhashtable = new cckht_cck_hash_map_t(MAX_DICTIONARY_SIZE);
 #else
@@ -349,7 +404,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     exit(-1);
 #endif
     break;
-  case 3:
+  case 4:
 #ifdef USE_CCKHT
     bcckhashtable = new cckht_bcck_hash_map_t(MAX_DICTIONARY_SIZE);
 #else
@@ -357,7 +412,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     exit(-1);
 #endif
     break;
-  case 4:
+  case 5:
 #ifdef USE_HSHT
     hsbhhashtable = new HSBitmapHopscotchHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
 #else
@@ -365,7 +420,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     exit(-1);
 #endif
     break;
-  case 5:
+  case 6:
 #ifdef USE_HSHT
     hschashtable = new HSChainedHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
 #else
@@ -373,7 +428,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     exit(-1);
 #endif
     break;
-  case 6:
+  case 7:
 #ifdef USE_HSHT
     hshhashtable = new HSHopscotchHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
 #else
@@ -397,6 +452,14 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
 #endif
     break;
   case 2:
+#ifdef USE_ETL
+    Insert = ETLCBTreeInsert;
+    Lookup = ETLCBTreeLookup;
+    TryRemove = ETLCBTreeTryRemove;
+    FreeHandle = ETLCBTreeFreeHandle;
+#endif
+    break;
+  case 3:
 #ifdef USE_CCKHT
     Insert = CCKHashMapInsert;
     Lookup = CCKHashMapLookup;
@@ -404,7 +467,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     FreeHandle = CCKHashMapFreeHandle;
 #endif
     break;
-  case 3:
+  case 4:
 #ifdef USE_CCKHT
     Insert = BCCKHashMapInsert;
     Lookup = BCCKHashMapLookup;
@@ -412,7 +475,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     FreeHandle = CCKHashMapFreeHandle;
 #endif
     break;
-  case 4:
+  case 5:
 #ifdef USE_HSHT
     Insert = HSBHHashMapInsert;
     Lookup = HSBHHashMapLookup;
@@ -420,7 +483,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     FreeHandle = HSHashMapFreeHandle;
 #endif
     break;
-  case 5:
+  case 6:
 #ifdef USE_HSHT
     Insert = HSCHashMapInsert;
     Lookup = HSCHashMapLookup;
@@ -428,7 +491,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     FreeHandle = HSHashMapFreeHandle;
 #endif
     break;
-  case 6:
+  case 7:
 #ifdef USE_HSHT
     Insert = HSHHashMapInsert;
     Lookup = HSHHashMapLookup;
@@ -453,26 +516,31 @@ NBLHandle *NBLExpDictionaryBase::ThreadInitImplementationNr(int nr)
 #endif
     break;
   case 2:
-#ifdef USE_CCKHT
-    handle = cckhashtable;
+#ifdef USE_ETL
+    handle = cbsearchtree;
 #endif
     break;
   case 3:
 #ifdef USE_CCKHT
-    handle = bcckhashtable;
+    handle = cckhashtable;
 #endif
     break;
   case 4:
-#ifdef USE_HSHT
-    handle = hsbhhashtable;
+#ifdef USE_CCKHT
+    handle = bcckhashtable;
 #endif
     break;
   case 5:
 #ifdef USE_HSHT
-    handle = hschashtable;
+    handle = hsbhhashtable;
 #endif
     break;
   case 6:
+#ifdef USE_HSHT
+    handle = hschashtable;
+#endif
+    break;
+  case 7:
 #ifdef USE_HSHT
     handle = hshhashtable;
 #endif
@@ -494,25 +562,30 @@ void NBLExpDictionaryBase::DeInitImplementationNr(int nr)
 #endif
     break;
   case 2:
+#ifdef USE_ETL
+    cbtree_free(cbsearchtree);
+#endif
+    break;
+  case 3:
 #ifdef USE_CCKHT
     delete cckhashtable;
 #endif
-  case 3:
+  case 4:
 #ifdef USE_CCKHT
     delete bcckhashtable;
 #endif
     break;
-  case 4:
+  case 5:
 #ifdef USE_HSHT
     delete hsbhhashtable;
 #endif
     break;
-  case 5:
+  case 6:
 #ifdef USE_HSHT
     delete hschashtable;
 #endif
     break;
-  case 6:
+  case 7:
 #ifdef USE_HSHT
     delete hshhashtable;
 #endif

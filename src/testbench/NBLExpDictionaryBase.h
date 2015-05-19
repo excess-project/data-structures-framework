@@ -14,6 +14,19 @@
 #include <tbb/concurrent_hash_map.h>
 #endif
 
+#ifdef USE_ETL
+extern "C" {
+// Inlined definitions due to header problems.
+struct cbtree_t;
+cbtree_t* cbtree_alloc();
+void* cbtree_free(cbtree_t* map);
+int cbtree_insert(cbtree_t* map, void* key, void* data);
+int cbtree_contains(cbtree_t* map, void* key);
+void *cbtree_get(cbtree_t* map, void* key);
+int cbtree_delete(cbtree_t* map, void* key);
+}
+#endif
+
 #ifdef USE_CCKHT
 #include <globaldefinitions.h>
 #include <concckhashtable.h>
@@ -80,6 +93,9 @@ private:
 #endif
 #ifdef USE_TBB
   tbb::concurrent_hash_map<int, void *> *tbbhashmap;
+#endif
+#ifdef USE_ETL
+  cbtree_t* cbsearchtree;
 #endif
 #ifdef USE_CCKHT
   ConcCukooHashtable<int, void *, HASH_INT, HASH_INT1> *cckhashtable;
