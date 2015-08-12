@@ -34,13 +34,18 @@ public class mf_extract
     private static String LIKWID_SOCKET0_DRAM = "likwid::socket0::DRAM::energy";
     private static String LIKWID_SOCKET1_DRAM = "likwid::socket1::DRAM::energy";
 
-    private static String EXTERNAL_SOCKET0 = "CPU1_node01";
-    private static String EXTERNAL_SOCKET1 = "CPU2_node01";
-    private static String EXTERNAL_GPU0    = "GPU1_node01";
-    private static String EXTERNAL_ATX12V  = "ATX12V_node01";
+    private static String EXTERNAL_SOCKET0 = "CPU1_node";
+    private static String EXTERNAL_SOCKET1 = "CPU2_node";
+    private static String EXTERNAL_GPU0    = "GPU1_node";
+    private static String EXTERNAL_ATX12V  = "ATX12V_node";
+
+    private static int    NO_NODES = 3;
+    private static String EXTERNAL_NODE = "NODE";
+    private static String EXTERNAL_NAS = "NAS";
 
     JSONArray mfEvents = new JSONArray();
     int processingType = 0;
+    String nodeNo = "01";
 
     public mf_extract()
     {
@@ -52,10 +57,13 @@ public class mf_extract
         processArguments(args);
         switch (processingType) {
         case 0:
-            processLikwidEvents(mfEvents);
+            processLikwidEnergyEvents(mfEvents);
             break;
         case 1:
-            processExternalPowerEvents(mfEvents);
+            processExternalPowerEvents(mfEvents, nodeNo);
+            break;
+        case 2:
+            processClusterPowerEvents(mfEvents);
             break;
         }
     }
@@ -75,6 +83,10 @@ public class mf_extract
                     processingType = 0;
                 } else if (args[i].equals("-external")) {
                     processingType = 1;
+                } else if (args[i].equals("-cluster")) {
+                    processingType = 2;
+                } else if (args[i].equals("-node")) {
+                    nodeNo = args[++i];
                 } else {
                     mfEvents = loadMFEvents(args[i]);
                 }
@@ -93,8 +105,14 @@ public class mf_extract
             ("  -likwid           Output likwid energy information as space" +
              " separated data.");
         System.out.println
-            ("  -external         Output external power information as space" +
-             " separated data.");
+            ("  -external         Output node internal external power" +
+             " information as space separated data.");
+        System.out.println
+            ("  -cluster          Output external power information for the" +
+             " cluster as space separated data.");
+        System.out.println
+            ("  -node <node#>     Select the node number for external power" +
+             " information.");
     }
 
     private JSONArray loadMFEvents(String filename)
@@ -120,7 +138,7 @@ public class mf_extract
         }
     }
 
-    private void processLikwidEvents(JSONArray events)
+    private void processLikwidEnergyEvents(JSONArray events)
     {
         System.out.println("# Likwid RAPL energy dissipated in Joules ");
         System.out.println("# timestamp PKG-0 PKG-1 PP0-0 PP0-1 DRAM-0 DRAM-1");
@@ -140,24 +158,50 @@ public class mf_extract
         }
     }
 
-    private void processExternalPowerEvents(JSONArray events)
+    private void processExternalPowerEvents(JSONArray events, String nodeNo)
     {
-        System.out.println("# External power measurements in Watts ");
+        System.out.println("# External power measurements in Watts for " +
+                           "node" + nodeNo);
         System.out.println("# timestamp SOCKET-0 SOCKET-1 ATX12V GPU-0");
+
         for (int i = 0; i < events.length(); i++) {
             JSONObject event = events.getJSONObject(i);
 
-            if (!event.has(EXTERNAL_SOCKET0)) continue;
-
+            if (!event.has(EXTERNAL_SOCKET0 + nodeNo)) continue;
             System.out.print("" + event.getDouble(TIMESTAMP));
-            printIfPresent(event, EXTERNAL_SOCKET0);
-            printIfPresent(event, EXTERNAL_SOCKET1);
-            printIfPresent(event, EXTERNAL_ATX12V);
-            printIfPresent(event, EXTERNAL_GPU0);
+
+            printIfPresent(event, EXTERNAL_SOCKET0 + nodeNo);
+            printIfPresent(event, EXTERNAL_SOCKET1 + nodeNo);
+            printIfPresent(event, EXTERNAL_ATX12V + nodeNo);
+            printIfPresent(event, EXTERNAL_GPU0 + nodeNo);
 
             System.out.println();
         }
     }
+
+    private void processClusterPowerEvents(JSONArray events)
+    {
+        System.out.println("# External node power measurements in Watts");
+        System.out.print("# timestamp");
+        for (int n = 1; n <= NO_NODES; n++) {
+            System.out.print(" NODE0" + n);
+        }
+        System.out.println(" " + EXTERNAL_NAS);
+
+        for (int i = 0; i < events.length(); i++) {
+            JSONObject event = events.getJSONObject(i);
+
+            if (!event.has(EXTERNAL_NODE + "01")) continue;
+            System.out.print("" + event.getDouble(TIMESTAMP));
+
+            for (int n = 1; n <= NO_NODES; n++) {
+                printIfPresent(event, EXTERNAL_NODE + "0" + n);
+            }
+            printIfPresent(event, EXTERNAL_NAS);
+
+            System.out.println();
+        }
+     }
 
     public static void main(String[] args)
         throws IOException
