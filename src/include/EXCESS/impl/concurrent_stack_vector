@@ -1,8 +1,8 @@
-// concurrent_bag adapter instantiation for the std::vector class and OpenMP.
+// concurrent_stack adapter instantiation for the std::vector class and OpenMP.
 //   Copyright (C) 2015  Anders Gidenstam
 
-#ifndef __CONCURRENT_BAG_VECTOR_H
-#define __CONCURRENT_BAG_VECTOR_H
+#ifndef __CONCURRENT_STACK_VECTOR_H
+#define __CONCURRENT_STACK_VECTOR_H
 
 #include <omp.h>
 #include <vector>
@@ -10,34 +10,34 @@
 namespace excess {
 
 template < typename T >
-class concurrent_bag_vector
+class concurrent_stack_vector
 {
 private:
-  std::vector<T*>* bag;
+  std::vector<T*>* stack;
 
 public:
   class handle
   {
   private:
-    friend concurrent_bag_vector;
-    std::vector<T*>* bag;
+    friend concurrent_stack_vector;
+    std::vector<T*>* stack;
 
-    handle(std::vector<T*>* bag)
+    handle(std::vector<T*>* stack)
     {
-      this->bag = bag;
+      this->stack = stack;
     }
 
   public:
     ~handle()
     {
-      bag = 0;
+      stack = 0;
     }
     
     bool insert(T* item)
     {
 #pragma omp critical
       {
-        bag->push_back(item);
+        stack->push_back(item);
       }
       return true;
     }
@@ -47,9 +47,9 @@ public:
       bool res = false;
 #pragma omp critical
       {
-        if (!bag->empty()) {
-          item = bag->back();
-          bag->pop_back();
+        if (!stack->empty()) {
+          item = stack->back();
+          stack->pop_back();
           res = true;
         }
       }
@@ -61,7 +61,7 @@ public:
       bool res;
 #pragma omp critical
       {
-        res = bag->empty();
+        res = stack->empty();
       }
       return res;
     }
@@ -71,25 +71,25 @@ public:
       int res;
 #pragma omp critical
       {
-        res = bag->size();
+        res = stack->size();
       }
       return res;
     }
   };
 
-  concurrent_bag_vector()
+  concurrent_stack_vector()
   {
-    bag = new std::vector<T*>();
+    stack = new std::vector<T*>();
   }
 
-  ~concurrent_bag_vector()
+  ~concurrent_stack_vector()
   {
-    delete bag;
+    delete stack;
   }
 
   handle get_handle()
   {
-    return handle(bag);
+    return handle(stack);
   }
 };
 
