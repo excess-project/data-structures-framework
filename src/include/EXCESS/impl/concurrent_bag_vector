@@ -1,0 +1,97 @@
+// ConcurrentBag_t adapter instantiation for the std:vector class and OpenMP.
+//   Copyright (C) 2015  Anders Gidenstam
+
+#ifndef __CONCURRENT_BAG_VECTOR_H
+#define __CONCURRENT_BAG_VECTOR_H
+
+#include <omp.h>
+#include <vector>
+
+namespace excess {
+
+template < typename T >
+class concurrent_bag_vector
+{
+private:
+  std::vector<T*>* bag;
+
+public:
+  class handle
+  {
+  private:
+    friend concurrent_bag_vector;
+    std::vector<T*>* bag;
+
+    handle(std::vector<T*>* bag)
+    {
+      this->bag = bag;
+    }
+
+  public:
+    ~handle()
+    {
+      bag = 0;
+    }
+    
+    bool insert(T* item)
+    {
+#pragma omp critical
+      {
+        bag->push_back(item);
+      }
+      return true;
+    }
+
+    bool try_remove_any(T*& item)
+    {
+      bool res = false;
+#pragma omp critical
+      {
+        if (!bag->empty()) {
+          item = bag->back();
+          bag->pop_back();
+          res = true;
+        }
+      }
+      return res;
+    }
+
+    bool empty()
+    {
+      bool res;
+#pragma omp critical
+      {
+        res = bag->empty();
+      }
+      return res;
+    }
+
+    int size()
+    {
+      int res;
+#pragma omp critical
+      {
+        res = bag->size();
+      }
+      return res;
+    }
+  };
+
+  concurrent_bag_vector()
+  {
+    bag = new std::vector<T*>();
+  }
+
+  ~concurrent_bag_vector()
+  {
+    delete bag;
+  }
+
+  handle get_handle()
+  {
+    return handle(bag);
+  }
+};
+
+}
+#endif

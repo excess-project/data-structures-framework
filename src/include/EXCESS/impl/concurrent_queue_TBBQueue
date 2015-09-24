@@ -1,0 +1,74 @@
+// concurrent_queue adapter instantiation for the TBB queue container.
+//   Copyright (C) 2015  Anders Gidenstam
+
+#ifndef __CONCURRENT_QUEUE_TBBQUEUE_H
+#define __CONCURRENT_QUEUE_TBBQUEUE_H
+
+#include <tbb/concurrent_queue.h>
+
+namespace excess {
+
+template < typename T >
+class concurrent_queue_TBBQueue
+{
+private:
+  tbb::concurrent_queue<T*>* queue;
+
+public:
+  class handle
+  {
+private:
+    friend concurrent_queue_TBBQueue;
+    tbb::concurrent_queue<T*>* queue;
+
+    handle(tbb::concurrent_queue<T*>* queue)
+    {
+      this->queue = queue;
+    }
+
+  public:
+    ~handle()
+    {
+      queue = 0;
+    }
+
+    bool enqueue(T* item)
+    {
+      queue->push(item);
+      return true;
+    }
+
+    bool dequeue(T*& item)
+    {
+      return queue->try_pop(item);
+    }
+
+    bool empty()
+    {
+      return queue->empty();
+    }
+
+    int size()
+    {
+      return queue->unsafe_size();
+    }
+  };
+
+  concurrent_queue_TBBQueue()
+  {
+    queue = new tbb::concurrent_queue<T*>();
+  }
+
+  ~concurrent_queue_TBBQueue()
+  {
+    delete queue;
+  }
+
+  handle get_handle()
+  {
+    return handle(queue);
+  }
+};
+
+}
+#endif

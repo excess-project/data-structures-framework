@@ -1,0 +1,83 @@
+// concurrent_bag adapter instantiation for the NOBLE NBLQueue containers.
+//   Copyright (C) 2015  Anders Gidenstam
+
+#ifndef __CONCURRENT_BAG_NBLQUEUE_H
+#define __CONCURRENT_BAG_NBLQUEUE_H
+
+#include <Noble.h>
+
+namespace excess {
+
+#define MAX_SIZE (64*1024*1024)
+
+template < typename T >
+class concurrent_bag_NBLQueue
+{
+private:
+  NBLQueueRoot *queue;
+
+public:
+  class handle
+  {
+private:
+    friend concurrent_bag_NBLQueue;
+    NBLQueue* queue;
+
+    handle(NBLQueue* queue)
+    {
+      this->queue = queue;
+    }
+
+  public:
+    ~handle()
+    {
+      NBLQueueFreeHandle(queue);
+      queue = 0;
+    }
+
+    bool insert(T* item)
+    {
+      NBLQueueEnqueue(queue, item);
+      return true;
+    }
+
+    bool try_remove_any(T*& item)
+    {
+      void* res = NBLQueueDequeue(queue);
+      if (res) {
+        item = (T*)res;
+      }
+      return res != 0;
+    }
+
+    bool empty()
+    {
+      return NBLQueueIsEmpty(queue);
+    }
+
+    int size()
+    {
+      return NBLQueueSize(queue);
+    }
+  };
+
+  concurrent_bag_NBLQueue()
+  {
+    // FIXME!
+    // LB, LF_DB_, LF_DU, LF_SB, LF_BB, LF_BASKET, LF_ELIM
+    queue = NBLQueueCreateLF_BB(MAX_SIZE);
+  }
+
+  ~concurrent_bag_NBLQueue()
+  {
+    NBLQueueFree(queue);
+  }
+
+  handle get_handle()
+  {
+    return handle(NBLQueueGetHandle(queue));
+  }
+};
+
+}
+#endif

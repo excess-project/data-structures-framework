@@ -1,0 +1,32 @@
+// EXCESS concurrent_queue adapters.
+//   Copyright (C) 2015  Anders Gidenstam
+
+namespace excess {
+/*
+template < typename T >
+class concurrent_queue
+{
+public:
+  class handle // Each instance MUST be acquired and used in a single thread.
+  {
+  public:
+    ~handle();
+
+    bool enqueue(T* item);
+    bool dequeue(T*& item);
+    bool empty();
+
+    int  size(); // NOTE: Often not thread-safe.
+  };
+
+  concurrent_queue();
+  handle get_handle();
+};
+*/
+}
+
+// NOBLE
+#include "impl/concurrent_queue_NBLQueue"
+
+// Intel TBB
+#include "impl/concurrent_queue_TBBQueue"

@@ -1,0 +1,38 @@
+// EXCESS concurrent_bag adapters.
+//   Copyright (C) 2015  Anders Gidenstam
+
+namespace excess {
+/*
+template < typename T >
+class concurrent_bag
+{
+public:
+  class handle // Each instance MUST be acquired and used in a single thread.
+  {
+  public:
+    ~handle();
+
+    bool insert(T* item);
+    bool try_remove_any(T*& item);
+    bool empty();
+
+    int  size(); // NOTE: Often not thread-safe.
+  };
+
+  concurrent_bag();
+  handle get_handle();
+};
+*/
+}
+
+// C++ STL + OpenMP
+#include "impl/concurrent_bag_vector"
+
+// NOBLE
+#include "impl/concurrent_bag_NBLBag"
+#include "impl/concurrent_bag_NBLQueue"
+#include "impl/concurrent_bag_NBLStack"
+
+// Intel TBB
+#include "impl/concurrent_bag_TBBQueue"
+

@@ -67,6 +67,18 @@ protected:
                                     long countNotFoundTryRemove);
 
   typedef void NBLHandle;
+  // FIXME:
+  //   The interface here needs to be useful and uniform across the
+  //   implementations. Currently, it is stronger than what many
+  //   implementations provide.
+  //   The current set of (expected) operations:
+  //   * bool insert(key, value)
+  //   * bool lookup(key, out value)
+  //   * bool remove(key, out value)
+  //   A minimal but much less useable set:
+  //   * void insert(key, value)
+  //   * bool lookup(key, out value)
+  //   * void remove(key)
   typedef bool (*InsertFunc)(NBLHandle *handle, int key, void *value,
                              long& count);
   typedef bool (*LookupFunc)(NBLHandle *handle, int key, void*& value,

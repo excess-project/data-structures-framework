@@ -1,0 +1,30 @@
+// EXCESS concurrent_stack adapters.
+//   Copyright (C) 2015  Anders Gidenstam
+
+namespace excess {
+/*
+template < typename T >
+class concurrent_stack
+{
+public:
+  class handle // Each instance MUST be acquired and used in a single thread.
+  {
+  public:
+    ~handle();
+
+    bool push(T* item);
+    bool pop(T*& item);
+    bool empty();
+
+    int  size(); // NOTE: Often not thread-safe.
+  };
+
+  concurrent_stack();
+  handle get_handle();
+};
+*/
+}
+
+// NOBLE
+#include "impl/concurrent_bag_NBLStack"
+

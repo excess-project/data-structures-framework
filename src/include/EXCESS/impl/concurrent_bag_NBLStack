@@ -1,0 +1,83 @@
+// concurrent_bag adapter instantiation for the NOBLE NBLStack containers.
+//   Copyright (C) 2015  Anders Gidenstam
+
+#ifndef __CONCURRENT_BAG_NBLSTACK_H
+#define __CONCURRENT_BAG_NBLSTACK_H
+
+#include <Noble.h>
+
+namespace excess {
+
+#define MAX_SIZE (64*1024*1024)
+
+template < typename T >
+class concurrent_bag_NBLStack
+{
+private:
+  NBLStackRoot *stack;
+
+public:
+  class handle
+  {
+private:
+    friend concurrent_bag_NBLStack;
+    NBLStack* stack;
+
+    handle(NBLStack* stack)
+    {
+      this->stack = stack;
+    }
+
+  public:
+    ~handle()
+    {
+      NBLStackFreeHandle(stack);
+      stack = 0;
+    }
+
+    bool insert(T* item)
+    {
+      NBLStackPush(stack, item);
+      return true;
+    }
+
+    bool try_remove_any(T*& item)
+    {
+      void* res = NBLStackPop(stack);
+      if (res) {
+        item = (T*)res;
+      }
+      return res != 0;
+    }
+
+    bool empty()
+    {
+      return NBLStackIsEmpty(stack);
+    }
+
+    int size()
+    {
+      return NBLStackSize(stack);
+    }
+  };
+
+  concurrent_bag_NBLStack()
+  {
+    // FIXME!
+    // LF_B, LF_ELIM
+    stack = NBLStackCreateLF_ELIM(MAX_SIZE);
+  }
+
+  ~concurrent_bag_NBLStack()
+  {
+    NBLStackFree(stack);
+  }
+
+  handle get_handle()
+  {
+    return handle(NBLStackGetHandle(stack));
+  }
+};
+
+}
+#endif
