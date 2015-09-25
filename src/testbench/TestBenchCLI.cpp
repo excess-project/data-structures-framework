@@ -17,6 +17,7 @@
 #include "NBLExpMandelbrot.h"
 #include "NBLExpGEMM.h"
 #include "NBLExpDictionary.h"
+#include "NBLExpWeakDictionary.h"
 
 #include "primitives.h"
 
@@ -215,6 +216,11 @@ static void process_arguments(int argc, char** argv)
           delete experiment;
           experiment = new NBLExpDictionary();
           break;
+        case 4:
+          experimentNr = e;
+          delete experiment;
+          experiment = new NBLExpWeakDictionary();
+          break;
         default:
           std::cerr << "Error: Bad experiment# given with -e." << std::endl;
           print_usage(argc, argv);
@@ -332,6 +338,9 @@ static void print_usage(int argc, char** argv)
 #endif
     cout << "                      " << "3.  " << "Dictionary microbenchmark."
          << ((experimentNr == 3) ? " (selected)" : "")
+         << endl;
+    cout << "                      " << "4.  " << "Weak dictionary microbenchmark."
+         << ((experimentNr == 4) ? " (selected)" : "")
          << endl;
   }
 
