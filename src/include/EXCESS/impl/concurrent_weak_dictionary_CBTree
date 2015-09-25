@@ -1,0 +1,80 @@
+// concurrent_weak_dictionary adapter instantiation for the EXCESS tree
+// library CBTree container.
+//   Copyright (C) 2015  Anders Gidenstam
+
+#ifndef __CONCURRENT_WEAK_DICTIONARY_CBTREE_H
+#define __CONCURRENT_WEAK_DICTIONARY_CBTREE_H
+
+#include <EXCESS/concurrent_weak_dictionary>
+
+namespace c_cbtree {
+extern "C" {
+// Inlined definitions due to ETL header problems.
+struct cbtree_t;
+cbtree_t* cbtree_alloc();
+void* cbtree_free(cbtree_t* map);
+int cbtree_insert(cbtree_t* map, void* key, void* data);
+int cbtree_contains(cbtree_t* map, void* key);
+void *cbtree_get(cbtree_t* map, void* key);
+int cbtree_delete(cbtree_t* map, void* key);
+}
+}
+
+namespace excess {
+
+template < class Key, class T >
+class concurrent_weak_dictionary_CBTree
+  :  public concurrent_weak_dictionary<Key, T>
+{
+private:
+  c_cbtree::cbtree_t* search_tree;
+public:
+  class handle // Each instance MUST be acquired and used in a single thread.
+    : public concurrent_weak_dictionary<Key, T>::handle
+  {
+  private:
+    c_cbtree::cbtree_t* search_tree;
+  public:
+    handle(c_cbtree::cbtree_t* search_tree)
+    {
+      this->search_tree = search_tree;
+    }
+
+    ~handle()
+    {
+      search_tree = 0;
+    }
+
+    void insert(Key key, T* value)
+    {
+      c_cbtree::cbtree_insert(search_tree, (void*)key, (void*)value);
+    }
+
+    bool lookup(Key key, T*& value)
+    {
+      return 0 != (value = c_cbtree::cbtree_get(search_tree, (void*)key));
+    }
+
+    void remove(Key key)
+    {
+      c_cbtree::cbtree_delete(search_tree, (void*)key);
+    }
+  };
+
+  concurrent_weak_dictionary_CBTree()
+  {
+    search_tree = c_cbtree::cbtree_alloc();
+  }
+
+  ~concurrent_weak_dictionary_CBTree()
+  {
+    c_cbtree::cbtree_free(search_tree);
+  }
+
+  typename concurrent_weak_dictionary<Key, T>::handle* get_handle()
+  {
+    return new handle(search_tree);
+  }
+};
+}
+#endif

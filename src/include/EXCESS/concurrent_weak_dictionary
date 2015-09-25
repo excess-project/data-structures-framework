@@ -1,0 +1,48 @@
+// EXCESS concurrent_weak_dictionary adapters.
+//   Copyright (C) 2015  Anders Gidenstam
+
+#ifndef __CONCURRENT_WEAK_DICTIONARY_H
+#define __CONCURRENT_WEAK_DICTIONARY_H
+
+namespace excess {
+
+template < class Key, class T >
+class concurrent_weak_dictionary
+{
+public:
+  class handle // Each handle MUST be acquired and used in a single thread.
+  {
+  public:
+    virtual ~handle() {}
+    virtual void insert(Key key, T* value)  = 0;
+    virtual bool lookup(Key key, T*& value) = 0;
+    virtual void remove(Key key)            = 0;
+  };
+  
+  virtual ~concurrent_weak_dictionary() {}
+  virtual handle* get_handle() = 0;
+  // NOTE: Each handle MUST be acquired and used in a single thread and
+  //       the handle MUST be deleted when no longer needed.
+};
+}
+
+// EXCESS tree library
+#include "impl/concurrent_weak_dictionary_CBTree"
+
+// Intel TBB
+#include "impl/concurrent_weak_dictionary_TBBhashmap"
+
+// Nhan & Tsigas CCKHashtable
+#include "impl/concurrent_weak_dictionary_CCKHT"
+#include "impl/concurrent_weak_dictionary_BCCKHT"
+
+// Concurrent hash map containers by Moran Tzafrir, Maurice Herlihy and
+// Nir Shavit.
+#include "impl/concurrent_weak_dictionary_HSHTBH"
+#include "impl/concurrent_weak_dictionary_HSHTC"
+#include "impl/concurrent_weak_dictionary_HSHTH"
+
+// NOBLE
+//#include "impl/concurrent_weak_dictionary_NBLSkipList"
+
+#endif
