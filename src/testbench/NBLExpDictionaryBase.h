@@ -15,6 +15,7 @@
 #endif
 
 #ifdef USE_ETL
+namespace c_cbtree {
 extern "C" {
 // Inlined definitions due to header problems.
 struct cbtree_t;
@@ -25,12 +26,16 @@ int cbtree_contains(cbtree_t* map, void* key);
 void *cbtree_get(cbtree_t* map, void* key);
 int cbtree_delete(cbtree_t* map, void* key);
 }
+}
 #endif
 
 #ifdef USE_CCKHT
-#include <globaldefinitions.h>
+#include <cstdio>
+#include <cstdlib>
+namespace cckht {
 #include <concckhashtable.h>
 #include <BucketizeConcCK.h>
+}
 #endif
 
 #ifdef USE_HSHT
@@ -107,16 +112,16 @@ private:
   tbb::concurrent_hash_map<int, void *> *tbbhashmap;
 #endif
 #ifdef USE_ETL
-  cbtree_t* cbsearchtree;
+  c_cbtree::cbtree_t* cbsearchtree;
 #endif
 #ifdef USE_CCKHT
-  ConcCukooHashtable<int, void *, HASH_INT, HASH_INT1> *cckhashtable;
-  BucketizeConcCK<int, void *>    *bcckhashtable;  
+  cckht::ConcCukooHashtable<int, void *, cckht::HASH_INT, cckht::HASH_INT1> *cckhashtable;
+  cckht::BucketizeConcCK<int, void *>    *bcckhashtable;  
 #endif
 #ifdef USE_HSHT
-  HSBitmapHopscotchHashMap_t *hsbhhashtable;
-  HSChainedHashMap_t *hschashtable;
-  HSHopscotchHashMap_t *hshhashtable;
+  hsht::HSBitmapHopscotchHashMap_t *hsbhhashtable;
+  hsht::HSChainedHashMap_t *hschashtable;
+  hsht::HSHopscotchHashMap_t *hshhashtable;
 #endif
 
 protected: 

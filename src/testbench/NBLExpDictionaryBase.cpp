@@ -33,8 +33,8 @@ typedef tbb::concurrent_hash_map<int,void*> tbb_hash_map_t;
 #ifdef USE_CCKHT
 #define CCKHT_STATUS
 
-typedef ConcCukooHashtable<int,void*,HASH_INT,HASH_INT1> cckht_cck_hash_map_t;
-typedef BucketizeConcCK<int,void*>  cckht_bcck_hash_map_t;
+typedef cckht::ConcCukooHashtable<int,void*,cckht::HASH_INT,cckht::HASH_INT1> cckht_cck_hash_map_t;
+typedef cckht::BucketizeConcCK<int,void*>  cckht_bcck_hash_map_t;
 #else
 #define CCKHT_STATUS " (unavailable)"
 #endif
@@ -110,7 +110,7 @@ static bool ETLCBTreeInsert(NBLHandle *handle,
                             int key, void *value,
                             long& count)
 {
-  int ret = cbtree_insert(static_cast<cbtree_t*>(handle), (void*)key, value);
+  int ret = c_cbtree::cbtree_insert(static_cast<c_cbtree::cbtree_t*>(handle), (void*)key, value);
   count++;
   return ret;
 }
@@ -118,7 +118,7 @@ static bool ETLCBTreeLookup(NBLHandle *handle,
                             int key, void*& value,
                             long& countOk, long& countNotFound)
 {
-  if (value = cbtree_get(static_cast<cbtree_t*>(handle), (void*)key)) {
+  if (value = c_cbtree::cbtree_get(static_cast<c_cbtree::cbtree_t*>(handle), (void*)key)) {
     countOk++;
     return true;
   } else {
@@ -130,7 +130,7 @@ static bool ETLCBTreeTryRemove(NBLHandle *handle,
                                int key, void*& value,
                                long& countOk, long& countNotFound)
 {
-  if (cbtree_delete(static_cast<cbtree_t*>(handle), (void*)key)) {
+  if (c_cbtree::cbtree_delete(static_cast<c_cbtree::cbtree_t*>(handle), (void*)key)) {
     countOk++;
     // FIXME: Set the out parameter. Not supported by the API.
     return true;
@@ -225,7 +225,7 @@ static bool HSBHHashMapInsert(NBLHandle *handle,
                               int key, void *value,
                               long& count)
 {
-  void* ret = static_cast<HSBitmapHopscotchHashMap_t*>(handle)->
+  void* ret = static_cast<hsht::HSBitmapHopscotchHashMap_t*>(handle)->
     putIfAbsent(key, value);
   count++;
   return (ret == 0);
@@ -234,7 +234,7 @@ static bool HSBHHashMapLookup(NBLHandle *handle,
                               int key, void*& value,
                               long& countOk, long& countNotFound)
 {
-  if (static_cast<HSBitmapHopscotchHashMap_t*>(handle)->
+  if (static_cast<hsht::HSBitmapHopscotchHashMap_t*>(handle)->
           containsKey(key)) {
     // FIXME: value is not set.
     countOk++;
@@ -249,7 +249,7 @@ static bool HSBHHashMapTryRemove(NBLHandle *handle,
                                  long& countOk, long& countNotFound)
 {
   if (0 !=
-      (value = static_cast<HSBitmapHopscotchHashMap_t*>(handle)->remove(key))) {
+      (value = static_cast<hsht::HSBitmapHopscotchHashMap_t*>(handle)->remove(key))) {
     countOk++;
     return true;
   } else {
@@ -261,7 +261,7 @@ static bool HSCHashMapInsert(NBLHandle *handle,
                              int key, void *value,
                              long& count)
 {
-  void* ret = static_cast<HSChainedHashMap_t*>(handle)->
+  void* ret = static_cast<hsht::HSChainedHashMap_t*>(handle)->
     putIfAbsent(key, value);
   count++;
   return (ret == 0);
@@ -270,7 +270,7 @@ static bool HSCHashMapLookup(NBLHandle *handle,
                              int key, void*& value,
                              long& countOk, long& countNotFound)
 {
-  if (static_cast<HSChainedHashMap_t*>(handle)->
+  if (static_cast<hsht::HSChainedHashMap_t*>(handle)->
           containsKey(key)) {
     // FIXME: value is not set.
     countOk++;
@@ -285,7 +285,7 @@ static bool HSCHashMapTryRemove(NBLHandle *handle,
                                 long& countOk, long& countNotFound)
 {
   if (0 !=
-      (value = static_cast<HSChainedHashMap_t*>(handle)->remove(key))) {
+      (value = static_cast<hsht::HSChainedHashMap_t*>(handle)->remove(key))) {
     countOk++;
     return true;
   } else {
@@ -297,7 +297,7 @@ static bool HSHHashMapInsert(NBLHandle *handle,
                              int key, void *value,
                              long& count)
 {
-  void* ret = static_cast<HSHopscotchHashMap_t*>(handle)->
+  void* ret = static_cast<hsht::HSHopscotchHashMap_t*>(handle)->
     putIfAbsent(key, value);
   count++;
   return (ret == 0);
@@ -306,7 +306,7 @@ static bool HSHHashMapLookup(NBLHandle *handle,
                              int key, void*& value,
                              long& countOk, long& countNotFound)
 {
-  if (static_cast<HSHopscotchHashMap_t*>(handle)->
+  if (static_cast<hsht::HSHopscotchHashMap_t*>(handle)->
           containsKey(key)) {
     // FIXME: value is not set.
     countOk++;
@@ -321,7 +321,7 @@ static bool HSHHashMapTryRemove(NBLHandle *handle,
                                 long& countOk, long& countNotFound)
 {
   if (0 !=
-      (value = static_cast<HSHopscotchHashMap_t*>(handle)->remove(key))) {
+      (value = static_cast<hsht::HSHopscotchHashMap_t*>(handle)->remove(key))) {
     countOk++;
     return true;
   } else {
@@ -389,7 +389,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     break;
   case 2:
 #ifdef USE_ETL
-    cbsearchtree = cbtree_alloc();
+    cbsearchtree = c_cbtree::cbtree_alloc();
 #else
     std::cerr << "Error: Compiled without EXCESS Tree Library support!"
               << std::endl;
@@ -414,7 +414,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     break;
   case 5:
 #ifdef USE_HSHT
-    hsbhhashtable = new HSBitmapHopscotchHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
+    hsbhhashtable = new hsht::HSBitmapHopscotchHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
 #else
     std::cerr << "Error: Compiled without HSHT support!" << std::endl;
     exit(-1);
@@ -422,7 +422,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     break;
   case 6:
 #ifdef USE_HSHT
-    hschashtable = new HSChainedHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
+    hschashtable = new hsht::HSChainedHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
 #else
     std::cerr << "Error: Compiled without HSHT support!" << std::endl;
     exit(-1);
@@ -430,7 +430,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
     break;
   case 7:
 #ifdef USE_HSHT
-    hshhashtable = new HSHopscotchHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
+    hshhashtable = new hsht::HSHopscotchHashMap_t(MAX_DICTIONARY_SIZE, MAX_CPUS);
 #else
     std::cerr << "Error: Compiled without HSHT support!" << std::endl;
     exit(-1);
@@ -563,7 +563,7 @@ void NBLExpDictionaryBase::DeInitImplementationNr(int nr)
     break;
   case 2:
 #ifdef USE_ETL
-    cbtree_free(cbsearchtree);
+    c_cbtree::cbtree_free(cbsearchtree);
 #endif
     break;
   case 3:
