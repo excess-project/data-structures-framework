@@ -27,22 +27,32 @@ public:
 }
 
 // EXCESS tree library
+#ifdef USE_ETL
 #include "impl/concurrent_weak_dictionary_CBTree"
+#endif
 
 // Intel TBB
+#ifdef USE_TBB
 #include "impl/concurrent_weak_dictionary_TBBhashmap"
+#endif
 
 // Nhan & Tsigas CCKHashtable
+#ifdef USE_CCKHT
 #include "impl/concurrent_weak_dictionary_CCKHT"
 #include "impl/concurrent_weak_dictionary_BCCKHT"
+#endif
 
 // Concurrent hash map containers by Moran Tzafrir, Maurice Herlihy and
 // Nir Shavit.
+#ifdef USE_HSHT
 #include "impl/concurrent_weak_dictionary_HSHTBH"
 #include "impl/concurrent_weak_dictionary_HSHTC"
 #include "impl/concurrent_weak_dictionary_HSHTH"
+#endif
 
 // NOBLE
+#ifdef USE_NOBLE
 //#include "impl/concurrent_weak_dictionary_NBLSkipList"
+#endif
 
 #endif
