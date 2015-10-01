@@ -1,8 +1,11 @@
 // EXCESS concurrent_bag adapters.
 //   Copyright (C) 2015  Anders Gidenstam
 
+#ifndef __CONCURRENT_BAG_H
+#define __CONCURRENT_BAG_H
+
 namespace excess {
-/*
+
 template < typename T >
 class concurrent_bag
 {
@@ -10,29 +13,36 @@ public:
   class handle // Each instance MUST be acquired and used in a single thread.
   {
   public:
-    ~handle();
+    virtual ~handle() {}
 
-    bool insert(T* item);
-    bool try_remove_any(T*& item);
-    bool empty();
+    virtual void insert(T* item)          = 0;
+    virtual bool try_remove_any(T*& item) = 0;
+    virtual bool empty()                  = 0;
 
-    int  size(); // NOTE: Often not thread-safe.
+    //int  size(); // NOTE: Often not atomic, sometimes not even thread-safe.
   };
 
-  concurrent_bag();
-  handle get_handle();
+  virtual ~concurrent_bag() {}
+  virtual handle* get_handle() = 0;
 };
-*/
+
 }
 
 // C++ STL + OpenMP
+#ifdef USE_OPENMP
 #include "impl/concurrent_bag_vector"
+#endif
 
 // NOBLE
+#ifdef USE_NOBLE
 #include "impl/concurrent_bag_NBLBag"
 #include "impl/concurrent_bag_NBLQueue"
 #include "impl/concurrent_bag_NBLStack"
+#endif
 
 // Intel TBB
+#ifdef USE_TBB 
 #include "impl/concurrent_bag_TBBQueue"
+#endif
 
+#endif

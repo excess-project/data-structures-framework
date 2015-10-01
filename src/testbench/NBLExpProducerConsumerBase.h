@@ -1,16 +1,11 @@
 // Base class for Producer-Consumer experiments for the experiment framework.
-//   Copyright (C) 2014  Anders Gidenstam
+//   Copyright (C) 2014 - 2015  Anders Gidenstam
 //
 #pragma once
 #include "NBLExperiment.h"
 
-#ifdef USE_NOBLE
-#include "Noble.h"
-#endif
+#include <EXCESS/concurrent_bag>
 
-#ifdef USE_TBB
-#include <tbb/concurrent_queue.h>
-#endif
 
 // Abstract base class for experiments that use Producer-Consumer collections.
 class NBLExpProducerConsumerBase :
@@ -35,12 +30,12 @@ protected:
                                     long countOkTryRemove,
                                     long countEmptyTryRemove);
 
-  typedef void NBLHandle;
-  typedef void (*InsertFunc)(NBLHandle *handle, void *argument, long& count);
-  typedef void *(*TryRemoveFunc)(NBLHandle *handle, long& countOk, long& countEmpty);
-  typedef void (*FreeHandleFunc)(NBLHandle *handle);
+  typedef excess::concurrent_bag<void> concurrent_bag_t;
+  typedef excess::concurrent_bag<void>::handle handle_t;
+  typedef void (*InsertFunc)(handle_t *handle, void *argument, long& count);
+  typedef void *(*TryRemoveFunc)(handle_t *handle, long& countOk, long& countEmpty);
 
-  virtual NBLHandle *ThreadInitImplementationNr(int nr);
+  virtual handle_t* ThreadInitImplementationNr(int nr);
 
   // Experiment shared state.
   int NR_CPUS;
@@ -51,18 +46,10 @@ protected:
   volatile long long countEmptyTryRemove;
 
 private:
-#ifdef USE_NOBLE
-  NBLQueueRoot *queue;
-  NBLStackRoot *stack;
-  NBLBagRoot   *bag;
-#endif
-#ifdef USE_TBB
-  tbb::concurrent_queue<void *> *tbbqueue;
-#endif
+  concurrent_bag_t* bag;
 
 protected: 
   // For the currently configured producer-consumer collection. 
   InsertFunc Insert;
   TryRemoveFunc TryRemove;
-  FreeHandleFunc FreeHandle;
 };

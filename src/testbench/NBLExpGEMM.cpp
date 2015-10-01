@@ -152,7 +152,7 @@ void NBLExpGEMM::RunImplementationNr(int nr, int threadID)
   long countOkTryRemove = 0;
   long countEmptyTryRemove = 0;
 
-  NBLHandle *handle = ThreadInitImplementationNr(nr);
+  handle_t* handle = ThreadInitImplementationNr(nr);
 
   int myId=(int)threadID;
   int i=0;
@@ -230,7 +230,7 @@ void NBLExpGEMM::RunImplementationNr(int nr, int threadID)
   // Update the global operation counters from all/active phases.
   SaveThreadStatistics(countInsert,
                        countOkTryRemove, countEmptyTryRemove);
-  FreeHandle(handle);
+  delete handle;
 }
 
 string NBLExpGEMM::GetStatistics()

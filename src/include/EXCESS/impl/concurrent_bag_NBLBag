@@ -4,20 +4,22 @@
 #ifndef __CONCURRENT_BAG_NBLBAG_H
 #define __CONCURRENT_BAG_NBLBAG_H
 
+#include <EXCESS/concurrent_bag>
+
 #include <Noble.h>
 
 namespace excess {
 
-#define MAX_SIZE (64*1024*1024)
-
 template < typename T >
 class concurrent_bag_NBLBag
+  : public concurrent_bag<T>
 {
 private:
   NBLBagRoot *bag;
 
 public:
-  class handle
+  class handle // Each instance MUST be acquired and used in a single thread.
+    : public concurrent_bag<T>::handle
   {
 private:
     friend concurrent_bag_NBLBag;
@@ -35,10 +37,9 @@ private:
       bag = 0;
     }
 
-    bool insert(T* item)
+    void insert(T* item)
     {
       NBLBagAdd(bag, item);
-      return true;
     }
 
     bool try_remove_any(T*& item)
@@ -61,11 +62,19 @@ private:
     }
   };
 
-  concurrent_bag_NBLBag()
+  enum bag_impl {LF_BB, LF_EDTREE};
+
+  concurrent_bag_NBLBag(bag_impl impl, int max_size)
   {
-    // FIXME!
-    // LF_BB, LF_EDTREE
-    bag = NBLBagCreateLF_BB(MAX_SIZE);
+    switch(impl) {
+    case LF_EDTREE:
+      bag = NBLBagCreateLF_EDTREE(max_size);
+      break;
+    case LF_BB:
+    default:
+      bag = NBLBagCreateLF_BB(max_size);
+      break;
+    }
   }
 
   ~concurrent_bag_NBLBag()
@@ -73,9 +82,9 @@ private:
     NBLBagFree(bag);
   }
 
-  handle get_handle()
+  handle* get_handle()
   {
-    return handle(NBLBagGetHandle(bag));
+    return new handle(NBLBagGetHandle(bag));
   }
 };
 

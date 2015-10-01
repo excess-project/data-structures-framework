@@ -1,5 +1,5 @@
 // Base class for Producer-Consumer experiments for the experiment framework.
-//   Copyright (C) 2014  Anders Gidenstam
+//   Copyright (C) 2014 - 2015  Anders Gidenstam
 //
 #include "NBLExpProducerConsumerBase.h"
 
@@ -22,111 +22,25 @@
 #define TBB_STATUS " (unavailable)"
 #endif
 
-typedef void NBLHandle;
-// Data structures from NOBLE 
-#ifdef USE_NOBLE
-static void QueueInsert(NBLHandle *handle, void *argument, long& count);
-static void *QueueTryRemove(NBLHandle *handle, long& countOk, long& countEmpty);
-static void QueueFreeHandle(NBLHandle *handle);
-static void StackInsert(NBLHandle *handle, void *argument, long& count);
-static void *StackTryRemove(NBLHandle *handle, long& countOk, long& countEmpty);
-static void StackFreeHandle(NBLHandle *handle);
-static void BagInsert(NBLHandle *handle, void *argument, long& count);
-static void *BagTryRemove(NBLHandle *handle, long& countOk, long& countEmpty);
-static void BagFreeHandle(NBLHandle *handle);
-#endif
-// Data structures from TBB.
-#ifdef USE_TBB
-static void TBBQueueInsert(void* queue, void *argument, long& count);
-static void *TBBQueueTryRemove(void* queue, long& countOk, long& countEmpty);
-static void TBBQueueFreeHandle(NBLHandle *handle);
-#endif
+typedef excess::concurrent_bag<void> concurrent_bag_t;
+typedef excess::concurrent_bag<void>::handle handle_t;
 
-#ifdef USE_NOBLE
-static void QueueInsert(NBLHandle *handle, void *argument, long& count)
+static void BagInsert(handle_t* handle, void* argument, long& count)
 {
-  NBLQueueEnqueue(static_cast<NBLQueue*>(handle), argument);
+  handle->insert(argument);
   count++;
 }
-static void *QueueTryRemove(NBLHandle *handle, long& countOk, long& countEmpty)
+
+static void* BagTryRemove(handle_t* handle, long& countOk, long& countEmpty)
 {
-  void* res = NBLQueueDequeue(static_cast<NBLQueue*>(handle));
-  if (res) {
+  void* value = 0;
+  if (handle->try_remove_any(value)) {
     countOk++;
   } else {
     countEmpty++;
   }
-  return res;
+  return value;
 }
-static void QueueFreeHandle(NBLHandle *handle)
-{
-  NBLQueueFreeHandle(static_cast<NBLQueue*>(handle));
-}
-
-static void StackInsert(void *handle, void *argument, long& count)
-{
-  NBLStackPush(static_cast<NBLStack*>(handle), argument);
-  count++;
-}
-static void *StackTryRemove(void *handle, long& countOk, long& countEmpty)
-{
-  void* res = NBLStackPop(static_cast<NBLStack*>(handle));
-  if (res) {
-    countOk++;
-  } else {
-    countEmpty++;
-  }
-  return res;
-}
-static void StackFreeHandle(NBLHandle *handle)
-{
-  NBLStackFreeHandle(static_cast<NBLStack*>(handle));
-}
-
-static void BagInsert(void *handle, void *argument, long& count)
-{
-  NBLBagAdd(static_cast<NBLBag*>(handle), argument);
-  count++;
-}
-static void *BagTryRemove(void *handle, long& countOk, long& countEmpty)
-{
-  void* res = NBLBagTryRemoveAny(static_cast<NBLBag*>(handle));
-  if (res) {
-    countOk++;
-  } else {
-    countEmpty++;
-  }
-  return res;
-}
-static void BagFreeHandle(NBLHandle *handle)
-{
-  NBLBagFreeHandle(static_cast<NBLBag*>(handle));
-}
-#endif
-
-#ifdef USE_TBB
-static void TBBQueueInsert(void *handle, void *argument, long& count)
-{
-  static_cast<tbb::concurrent_queue<void*>*>(handle)->push(argument);
-  count++;
-}
-static void *TBBQueueTryRemove(void *handle, long& countOk, long& countEmpty)
-{
-  void *item;
-  bool res =
-    static_cast<tbb::concurrent_queue<void*>*>(handle)->try_pop(item);
-  if (res) {
-    countOk++;
-    return item;
-  } else {
-    countEmpty++;
-    return 0;
-  }
-}
-static void TBBQueueFreeHandle(void *handle)
-{
-}
-#endif
 
 NBLExpProducerConsumerBase::NBLExpProducerConsumerBase(void)
 {
@@ -166,30 +80,51 @@ void NBLExpProducerConsumerBase::InitImplementationNr(int nr)
   switch(nr) {
 #ifdef USE_NOBLE
   case 0:
-    queue=NBLQueueCreateLF_DB(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLQueue<void>
+            (excess::concurrent_bag_NBLQueue<void>::LF_DB,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
   case 1:
-    queue=NBLQueueCreateLF_DU(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLQueue<void>
+            (excess::concurrent_bag_NBLQueue<void>::LF_DU,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
   case 2:
-    queue=NBLQueueCreateLF_SB(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLQueue<void>
+            (excess::concurrent_bag_NBLQueue<void>::LF_SB,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
   case 3:
-    queue=NBLQueueCreateLF_BB(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLQueue<void>
+            (excess::concurrent_bag_NBLQueue<void>::LF_BB,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
   case 4:
-    queue=NBLQueueCreateLF_BASKET(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLQueue<void>
+            (excess::concurrent_bag_NBLQueue<void>::LF_BASKET,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
   case 5:
-    queue=NBLQueueCreateLF_ELIM(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLQueue<void>
+            (excess::concurrent_bag_NBLQueue<void>::LF_ELIM,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
   case 6:
-    queue=NBLQueueCreateLB();
+    bag =
+      new excess::concurrent_bag_NBLQueue<void>
+            (excess::concurrent_bag_NBLQueue<void>::LB,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
 #endif
   case 7:
 #ifdef USE_TBB
-    tbbqueue = new tbb::concurrent_queue<void*>();
+    bag = new excess::concurrent_bag_TBBQueue<void>();
 #else
     std::cerr << "Error: Compiled without Intel TBB support!" << std::endl;
     exit(-1);
@@ -197,16 +132,28 @@ void NBLExpProducerConsumerBase::InitImplementationNr(int nr)
     break;
 #ifdef USE_NOBLE
   case 8:
-    stack=NBLStackCreateLF_B(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLStack<void>
+            (excess::concurrent_bag_NBLStack<void>::LF_B,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
   case 9:
-    stack=NBLStackCreateLF_ELIM(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLStack<void>
+            (excess::concurrent_bag_NBLStack<void>::LF_ELIM,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
   case 10:
-    bag=NBLBagCreateLF_BB(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLBag<void>
+            (excess::concurrent_bag_NBLBag<void>::LF_BB,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
   case 11:
-    bag=NBLBagCreateLF_EDTREE(NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
+    bag =
+      new excess::concurrent_bag_NBLBag<void>
+            (excess::concurrent_bag_NBLBag<void>::LF_EDTREE,
+             NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
 #else
   case 0:
@@ -226,114 +173,18 @@ void NBLExpProducerConsumerBase::InitImplementationNr(int nr)
 #endif
   }
   // Set up the collection operations pointers.
-  switch(nr) {
-  case 0:    
-  case 1: 
-  case 2:
-  case 3:
-  case 4:
-  case 5:
-  case 6:
-#ifdef USE_NOBLE
-    Insert = QueueInsert;
-    TryRemove = QueueTryRemove;
-    FreeHandle = QueueFreeHandle;
-#endif
-    break;
-  case 7:
-#ifdef USE_TBB
-    Insert = TBBQueueInsert;
-    TryRemove = TBBQueueTryRemove;
-    FreeHandle = TBBQueueFreeHandle;
-#endif
-    break;
-  case 8:
-  case 9:
-#ifdef USE_NOBLE
-    Insert = StackInsert;
-    TryRemove = StackTryRemove;
-    FreeHandle = StackFreeHandle;
-#endif
-    break;
-  case 10:
-  case 11:
-#ifdef USE_NOBLE
-    Insert = BagInsert;
-    TryRemove = BagTryRemove;
-    FreeHandle = BagFreeHandle;
-#endif
-    break;
-  }
+  Insert = BagInsert;
+  TryRemove = BagTryRemove;
 }
 
-NBLHandle *NBLExpProducerConsumerBase::ThreadInitImplementationNr(int nr)
+handle_t* NBLExpProducerConsumerBase::ThreadInitImplementationNr(int nr)
 {
-  NBLHandle *handle = 0;
-  switch(nr) {
-  case 0:    
-  case 1: 
-  case 2:
-  case 3:
-  case 4:
-  case 5:
-  case 6:
-#ifdef USE_NOBLE
-    handle = NBLQueueGetHandle(queue);
-#endif
-    break;
-  case 7:
-#ifdef USE_TBB
-    handle = tbbqueue;
-#endif
-    break;
-  case 8:
-  case 9:
-#ifdef USE_NOBLE
-    handle = NBLStackGetHandle(stack);
-#endif
-    break;
-  case 10:
-  case 11:
-#ifdef USE_NOBLE
-    handle = NBLBagGetHandle(bag);
-#endif
-    break;
-  }
-  return handle;
+  return bag->get_handle();
 }
 
 void NBLExpProducerConsumerBase::DeInitImplementationNr(int nr)
 {
-  switch(nr) {
-  case 0:    
-  case 1:
-  case 2:
-  case 3:
-  case 4:
-  case 5:
-  case 6:
-#ifdef USE_NOBLE
-    NBLQueueFree(queue);
-#endif
-    break;
-  case 7:
-#ifdef USE_TBB
-    delete tbbqueue;
-#endif
-    break;
-  case 8:
-  case 9:
-#ifdef USE_NOBLE
-    NBLStackFree(stack);
-#endif
-    break;
-  case 10:
-  case 11:
-#ifdef USE_NOBLE
-    NBLBagFree(bag);
-#endif
-    break;
-  }
+  delete bag;
 }
 
 string NBLExpProducerConsumerBase::GetStatistics()
