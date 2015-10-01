@@ -4,6 +4,8 @@
 #ifndef __CONCURRENT_BAG_VECTOR_H
 #define __CONCURRENT_BAG_VECTOR_H
 
+#include <EXCESS/concurrent_bag>
+
 #include <omp.h>
 #include <vector>
 
@@ -11,12 +13,14 @@ namespace excess {
 
 template < typename T >
 class concurrent_bag_vector
+  : public concurrent_bag<T>
 {
 private:
   std::vector<T*>* bag;
 
 public:
-  class handle
+  class handle // Each instance MUST be acquired and used in a single thread.
+    : public concurrent_bag<T>::handle
   {
   private:
     friend concurrent_bag_vector;
@@ -33,13 +37,12 @@ public:
       bag = 0;
     }
     
-    bool insert(T* item)
+    void insert(T* item)
     {
 #pragma omp critical
       {
         bag->push_back(item);
       }
-      return true;
     }
 
     bool try_remove_any(T*& item)
@@ -87,9 +90,9 @@ public:
     delete bag;
   }
 
-  handle get_handle()
+  handle* get_handle()
   {
-    return handle(bag);
+    return new handle(bag);
   }
 };
 
