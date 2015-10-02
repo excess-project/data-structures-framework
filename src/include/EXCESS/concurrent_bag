@@ -20,10 +20,24 @@ public:
     virtual bool empty()                  = 0;
 
     //int  size(); // NOTE: Often not atomic, sometimes not even thread-safe.
+  protected:
+    handle() {}
+  private:
+    // Disallow copying and assignment.
+    handle(const handle&);
+    void operator=(const handle&);
   };
 
   virtual ~concurrent_bag() {}
   virtual handle* get_handle() = 0;
+  // NOTE: Each handle MUST be acquired and used in a single thread and
+  //       the handle MUST be deleted when no longer needed.
+protected:
+  concurrent_bag() {}
+private:
+  // Disallow copying and assignment.
+  concurrent_bag(const concurrent_bag&);
+  void operator=(const concurrent_bag&);
 };
 
 }

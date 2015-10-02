@@ -17,12 +17,25 @@ public:
     virtual void insert(Key key, T* value)  = 0;
     virtual bool lookup(Key key, T*& value) = 0;
     virtual void remove(Key key)            = 0;
+
+  protected:
+    handle() {}
+  private:
+    // Disallow copying and assignment.
+    handle(const handle&);
+    void operator=(const handle&);
   };
   
   virtual ~concurrent_weak_dictionary() {}
   virtual handle* get_handle() = 0;
   // NOTE: Each handle MUST be acquired and used in a single thread and
   //       the handle MUST be deleted when no longer needed.
+protected:
+  concurrent_weak_dictionary() {}
+private:
+  // Disallow copying and assignment.
+  concurrent_weak_dictionary(const concurrent_weak_dictionary&);
+  void operator=(const concurrent_weak_dictionary&);
 };
 }
 
