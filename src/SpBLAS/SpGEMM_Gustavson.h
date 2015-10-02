@@ -71,7 +71,7 @@ SpMatrix SpMM_Gustavson_RowStore(const SpMatrix& A, const SpMatrix& B)
     Ci.pop_back();
 
     int kbegin = C.rp[ci->row];
-    int knnz   = ci->nzmax;
+    int knnz   = element_count[ci->row];
 #ifdef _MEMCPY
     // It is not clear if memcpy is any faster. The bigger loop body below
     // might allow better optimization.

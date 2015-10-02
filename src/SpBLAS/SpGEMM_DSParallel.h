@@ -26,7 +26,7 @@
 #define WU 4
 
 /*
-// Split into its pahses below.
+// Split into its phases below.
 template < template < typename T > class concurrent_bag_t >
 SpMatrix SpMM_DSParallel_RowStore(const SpMatrix& A, const SpMatrix& B)
 {
