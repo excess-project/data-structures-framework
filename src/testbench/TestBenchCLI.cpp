@@ -16,6 +16,7 @@
 #include "NBLExpProducerConsumer.h"
 #include "NBLExpMandelbrot.h"
 #include "NBLExpGEMM.h"
+#include "NBLExpSpGEMM.h"
 #include "NBLExpDictionary.h"
 #include "NBLExpWeakDictionary.h"
 
@@ -195,30 +196,29 @@ static void process_arguments(int argc, char** argv)
     } else if (arg.compare("-e") == 0) {
       int e;
       if ((++i < argc) && try_parse(string(argv[i]), e)) {
+        experimentNr = e;
+        if (e != 0) {
+          delete experiment;
+        }
         switch (e) {
         case 0:
           // Keep the producer-consumer experiment.
           break;
         case 1:
-          experimentNr = e;
-          delete experiment;
           experiment = new NBLExpApplicationMandelbrot();
           break;
 #ifdef USE_BLAS
         case 2:
-          experimentNr = e;
-          delete experiment;
           experiment = new NBLExpGEMM();
           break;
 #endif
         case 3:
-          experimentNr = e;
-          delete experiment;
-          experiment = new NBLExpDictionary();
+          experiment = new NBLExpSpGEMM();
           break;
         case 4:
-          experimentNr = e;
-          delete experiment;
+          experiment = new NBLExpDictionary();
+          break;
+        case 5:
           experiment = new NBLExpWeakDictionary();
           break;
         default:
@@ -336,11 +336,14 @@ static void print_usage(int argc, char** argv)
          << ((experimentNr == 2) ? " (selected)" : "")
          << endl;
 #endif
-    cout << "                      " << "3.  " << "Dictionary microbenchmark."
+    cout << "                      " << "3.  " << "SpDGEMM microbenchmark."
          << ((experimentNr == 3) ? " (selected)" : "")
          << endl;
-    cout << "                      " << "4.  " << "Weak dictionary microbenchmark."
+    cout << "                      " << "4.  " << "Dictionary microbenchmark."
          << ((experimentNr == 4) ? " (selected)" : "")
+         << endl;
+    cout << "                      " << "5.  " << "Weak dictionary microbenchmark."
+         << ((experimentNr == 5) ? " (selected)" : "")
          << endl;
   }
 

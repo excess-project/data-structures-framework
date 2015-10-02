@@ -44,6 +44,7 @@ static void* BagTryRemove(handle_t* handle, long& countOk, long& countEmpty)
 
 NBLExpProducerConsumerBase::NBLExpProducerConsumerBase(void)
 {
+  bag = 0;
   NR_CPUS=2;
   NR_OPERS=500000;
 }
@@ -185,6 +186,7 @@ handle_t* NBLExpProducerConsumerBase::ThreadInitImplementationNr(int nr)
 void NBLExpProducerConsumerBase::DeInitImplementationNr(int nr)
 {
   delete bag;
+  bag = 0;
 }
 
 string NBLExpProducerConsumerBase::GetStatistics()
