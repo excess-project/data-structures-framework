@@ -94,7 +94,9 @@ SpMatrix::LoadFromFile(std::string filename)
 
   ifs.open(filename.c_str(), std::ifstream::in);
   
-  std::getline(ifs, line);
+  do {
+    std::getline(ifs, line);
+  } while (line[0] == '%');
   std::stringstream(line) >> m >> n >> nnz;
   
   std::vector<MatrixTriple_t> Mij;

@@ -33,6 +33,10 @@ TBBLIB = -Wl,-rpath,$(TBBDIR)/build/linux_intel64_gcc_cc4.6_libc2.15_kernel3.13.
 BLASDIR = /opt/OpenBLAS/st
 BLASLIB = $(BLASDIR)/lib/libopenblas.a
 
+#  librsb
+LIBRSBDIR = /opt/librsb/1.2.0-rc1
+LIBRSBLIB = -L$(LIBRSBDIR)/lib -lrsb
+
 #  EXCESS MF integration
 EXCESSMFDIR = /opt/mf/0.1.4
 EXCESSMFURL = \"http://192.168.0.2:3000\"
@@ -45,6 +49,7 @@ TGFLAGS += -DUSE_TBB
 #TGFLAGS += -DUSE_CCKHT
 #TGFLAGS += -DUSE_HSHT
 TGFLAGS += -DUSE_BLAS
+TGFLAGS += -DUSE_LIBRSB
 TGFLAGS += -DNOSAVEMANDELBROT
 #TGFLAGS += -DUSE_EXCESS_MF
 
@@ -56,12 +61,14 @@ CFLAGS += -I$(ETLDIR)/include
 CFLAGS += -I$(CCKHT)
 CFLAGS += -I$(HSHT) -I$(HSHT)/data_structures
 CFLAGS += -I$(BLASDIR)/include
+CFLAGS += -I$(LIBRSBDIR)/include
 CFLAGS += -I$(EXCESSMFDIR)/include -DEXCESSMFURL=$(EXCESSMFURL)
 
 LDFLAGS = $(NOBLELIB) $(TBBLIB) $(BLASLIB) $(EXCESSMFLIB) -lrt
 LDFLAGS += $(ETLLIB)
 LDFLAGS += $(CCKHTLIB)
 LDFLAGS += $(HSHTLIB)
+LDFLAGS += $(LIBRSBLIB)
 
 export
 

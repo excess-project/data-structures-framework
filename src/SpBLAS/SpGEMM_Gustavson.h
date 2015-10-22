@@ -13,9 +13,11 @@
 #include "SpMatrix.h"
 #include "SparseAccumulator.h"
 
-SpMatrix SpMM_Gustavson_RowStore(const SpMatrix& A, const SpMatrix& B)
+SpMatrix SpGEMM_Gustavson_RowStore(double alpha, const SpMatrix& A,
+                                   double beta,  const SpMatrix& B)
 {
   assert(A.n == B.m);
+  double alphabeta = alpha*beta;
   SparseAccumulator SPA(B.n);
   std::vector< SpMatrix::MatrixRow_t* > Ci;
   int* element_count = (int*)calloc(A.m, sizeof(int));
@@ -41,7 +43,7 @@ SpMatrix SpMM_Gustavson_RowStore(const SpMatrix& A, const SpMatrix& B)
     int nnz = 0;
     SpMatrix::MatrixRow_t* row = new SpMatrix::MatrixRow_t(ci, cend - cik);
     for (; cik < cend; ++cik) {
-      double vcik = SPA.v[*cik];
+      double vcik = alphabeta*SPA.v[*cik];
       if (vcik != 0.0) { // FIXME: cut off very small values too?
         row->ci[nnz] = *cik;
         row->v[nnz]  = vcik;
@@ -89,9 +91,16 @@ SpMatrix SpMM_Gustavson_RowStore(const SpMatrix& A, const SpMatrix& B)
   return C;
 }
 
-SpMatrix SpMM_Gustavson_TripletStore(const SpMatrix& A, const SpMatrix& B)
+SpMatrix SpMM_Gustavson_RowStore(const SpMatrix& A, const SpMatrix& B)
+{
+  return SpGEMM_Gustavson_RowStore(1.0, A, 1.0, B);
+}
+
+SpMatrix SpGEMM_Gustavson_TripletStore(double alpha, const SpMatrix& A,
+                                       double beta,  const SpMatrix& B)
 {
   assert(A.n == B.m);
+  double alphabeta = alpha*beta;
   SparseAccumulator SPA(B.n);
   std::vector< SpMatrix::MatrixTriple_t > Cik;
 
@@ -112,16 +121,22 @@ SpMatrix SpMM_Gustavson_TripletStore(const SpMatrix& A, const SpMatrix& B)
     std::vector<int>::const_iterator cik = SPA.nzs.begin();
     std::vector<int>::const_iterator cend  = SPA.nzs.end();
     for (; cik < cend; ++cik) {
-      double vcik = SPA.v[*cik];
+      double vcik = alphabeta*SPA.v[*cik];
       if (vcik != 0.0) { // FIXME: cut off very small values too?
         Cik.push_back
-          (SpMatrix::MatrixTriple_t(SpMatrix::RowColumnPair_t(ci,*cik), vcik));
+          (SpMatrix::MatrixTriple_t(SpMatrix::RowColumnPair_t(ci,*cik),
+                                    vcik));
       }
     }
     SPA.Clear();
   }
   // Create the result matrix C.
   return SpMatrix(A.m, B.n, Cik);
+}
+
+SpMatrix SpMM_Gustavson_TripletStore(const SpMatrix& A, const SpMatrix& B)
+{
+  return SpGEMM_Gustavson_TripletStore(1.0, A, 1.0, B);
 }
 
 #endif

@@ -138,14 +138,15 @@ SpMatrix SpMM_DSParallel_RowStore(const SpMatrix& A, const SpMatrix& B)
 
 // Internal function: 1st parallel pass.
 template < template < typename T > class concurrent_bag_t >
-void SpMM_DSParallel_RowStore_1P
-  (const SpMatrix& A, const SpMatrix& B,
+void SpGEMM_DSParallel_RowStore_1P
+  (double alpha, const SpMatrix& A, double beta, const SpMatrix& B,
    concurrent_bag_t< SpMatrix::MatrixRow_t >* Ci_bag,
    volatile int* nextci,
    int* element_count)
 {
   typename concurrent_bag_t< SpMatrix::MatrixRow_t >::handle* Ci =
     Ci_bag->get_handle();
+  double alphabeta = alpha*beta;
   SparseAccumulator SPA(B.n);
   int ci;
 
@@ -178,7 +179,7 @@ void SpMM_DSParallel_RowStore_1P
       int nnz = 0;
       SpMatrix::MatrixRow_t* row = new SpMatrix::MatrixRow_t(ci, cend - cik);
       for (; cik < cend; ++cik) {
-        double vcik = SPA.v[*cik];
+        double vcik = alphabeta*SPA.v[*cik];
         if (vcik != 0.0) { // FIXME: cut off very small values too?
           row->ci[nnz] = *cik;
           row->v[nnz]  = vcik;
@@ -196,7 +197,7 @@ void SpMM_DSParallel_RowStore_1P
 
 // Internal function: Sequential pass.
 template < template < typename T > class concurrent_bag_t >
-void SpMM_DSParallel_RowStore_2S
+void SpGEMM_DSParallel_RowStore_2S
   (SpMatrix& C,
    int* element_count)
 {
@@ -219,7 +220,7 @@ void SpMM_DSParallel_RowStore_2S
 
 // Internal function: 2nd parallel pass.
 template < template < typename T > class concurrent_bag_t >
-void SpMM_DSParallel_RowStore_3P
+void SpGEMM_DSParallel_RowStore_3P
   (SpMatrix& C,
    concurrent_bag_t< SpMatrix::MatrixRow_t >* Ci_bag,
    int* element_count)
@@ -247,7 +248,8 @@ void SpMM_DSParallel_RowStore_3P
 }
 
 template < template < typename T > class concurrent_bag_t >
-SpMatrix SpMM_DSParallel_RowStore(const SpMatrix& A, const SpMatrix& B)
+SpMatrix SpGEMM_DSParallel_RowStore(double alpha, const SpMatrix& A,
+                                    double beta,  const SpMatrix& B)
 {
   assert(A.n == B.m);
   volatile int nextci = 0;
@@ -257,31 +259,38 @@ SpMatrix SpMM_DSParallel_RowStore(const SpMatrix& A, const SpMatrix& B)
 
 #pragma omp parallel
   { 
-    SpMM_DSParallel_RowStore_1P<concurrent_bag_t>(A, B,
-                                                  Ci_bag,
-                                                  &nextci, element_count);
+    SpGEMM_DSParallel_RowStore_1P<concurrent_bag_t>(alpha, A, beta, B,
+                                                    Ci_bag,
+                                                    &nextci, element_count);
   }
 
   // Create the result matrix C.
   SpMatrix C(A.m, B.n, 0);
 
   // Sequential preparation of C.
-  SpMM_DSParallel_RowStore_2S<concurrent_bag_t>(C, element_count);
+  SpGEMM_DSParallel_RowStore_2S<concurrent_bag_t>(C, element_count);
 
   // Fill C in parallel from the row store.
 #pragma omp parallel
   { 
-    SpMM_DSParallel_RowStore_3P<concurrent_bag_t>(C, Ci_bag, element_count);
+    SpGEMM_DSParallel_RowStore_3P<concurrent_bag_t>(C, Ci_bag, element_count);
   }
 
   return C;
 }
 
+template < template < typename T > class concurrent_bag_t >
+SpMatrix SpMM_DSParallel_RowStore(const SpMatrix& A, const SpMatrix& B)
+{
+  return SpGEMM_DSParallel_RowStore<concurrent_bag_t>(1.0, A, 1.0, B);
+}
 
 template < template < typename T > class concurrent_bag_t >
-SpMatrix SpMM_DSParallel_TripletStore(const SpMatrix& A, const SpMatrix& B)
+SpMatrix SpGEMM_DSParallel_TripletStore(double alpha, const SpMatrix& A,
+                                        double beta,  const SpMatrix& B)
 {
   assert(A.n == B.m);
+  double alphabeta = alpha*beta;
   volatile int nextci = 0;
   concurrent_bag_t< SpMatrix::MatrixTriple_t >* Cik_bag =
     new concurrent_bag_t< SpMatrix::MatrixTriple_t >();
@@ -322,7 +331,7 @@ SpMatrix SpMM_DSParallel_TripletStore(const SpMatrix& A, const SpMatrix& B)
         std::vector<int>::const_iterator cend  = SPA.nzs.end();
         int nnz = 0;
         for (; cik < cend; ++cik) {
-          double vcik = SPA.v[*cik];
+          double vcik = alphabeta*SPA.v[*cik];
           if (vcik != 0.0) { // FIXME: cut off very small values too?
             nnz++;
             Cik->insert
@@ -380,6 +389,12 @@ SpMatrix SpMM_DSParallel_TripletStore(const SpMatrix& A, const SpMatrix& B)
 
   //std::cout << "SpMM(): Got " << Cik.size() << " non-zeros.";
   return C;
+}
+
+template < template < typename T > class concurrent_bag_t >
+SpMatrix SpMM_DSParallel_TripletStore(const SpMatrix& A, const SpMatrix& B)
+{
+  return SpGEMM_DSParallel_TripletStore<concurrent_bag_t>(1.0, A, 1.0, B);
 }
 
 #endif
