@@ -4,20 +4,22 @@
 #ifndef __CONCURRENT_STACK_NBLSTACK_H
 #define __CONCURRENT_STACK_NBLSTACK_H
 
+#include <EXCESS/concurrent_stack>
+
 #include <Noble.h>
 
 namespace excess {
 
-#define MAX_SIZE (64*1024*1024)
-
 template < typename T >
 class concurrent_stack_NBLStack
+  : public concurrent_stack<T>
 {
 private:
   NBLStackRoot *stack;
 
 public:
-  class handle
+  class handle // Each instance MUST be acquired and used in a single thread.
+    : public concurrent_stack<T>::handle
   {
 private:
     friend concurrent_stack_NBLStack;
@@ -35,13 +37,12 @@ private:
       stack = 0;
     }
 
-    bool push(T* item)
+    void push(T* item)
     {
       NBLStackPush(stack, item);
-      return true;
     }
 
-    bool pop(T*& item)
+    bool try_pop(T*& item)
     {
       void* res = NBLStackPop(stack);
       if (res) {
@@ -61,11 +62,19 @@ private:
     }
   };
 
-  concurrent_stack_NBLStack()
+  enum stack_impl {LF_B, LF_ELIM};
+
+  concurrent_stack_NBLStack(stack_impl impl, int max_size)
   {
-    // FIXME!
-    // LF_B, LF_ELIM
-    stack = NBLStackCreateLF_ELIM(MAX_SIZE);
+    switch(impl) {
+    case LF_B:
+      stack = NBLStackCreateLF_B(max_size);
+      break;
+    case LF_ELIM:
+    default:
+      stack = NBLStackCreateLF_ELIM(max_size);
+      break;
+    }
   }
 
   ~concurrent_stack_NBLStack()
@@ -73,9 +82,9 @@ private:
     NBLStackFree(stack);
   }
 
-  handle get_handle()
+  handle* get_handle()
   {
-    return handle(NBLStackGetHandle(stack));
+    return new handle(NBLStackGetHandle(stack));
   }
 };
 

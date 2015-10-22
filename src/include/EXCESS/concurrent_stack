@@ -1,8 +1,11 @@
 // EXCESS concurrent_stack adapters.
 //   Copyright (C) 2015  Anders Gidenstam
 
+#ifndef __CONCURRENT_STACK_H
+#define __CONCURRENT_STACK_H
+
 namespace excess {
-/*
+
 template < typename T >
 class concurrent_stack
 {
@@ -10,21 +13,38 @@ public:
   class handle // Each instance MUST be acquired and used in a single thread.
   {
   public:
-    ~handle();
+    virtual ~handle() {}
 
-    bool push(T* item);
-    bool pop(T*& item);
-    bool empty();
+    virtual void push(T* item)     = 0;
+    virtual bool try_pop(T*& item) = 0;
+    virtual bool empty()           = 0;
 
-    int  size(); // NOTE: Often not thread-safe.
+    //virtual int  size(); // NOTE: Often not atomic or even thread-safe.
+  protected:
+    handle() {}
+  private:
+    // Disallow copying and assignment.
+    handle(const handle&);
+    void operator=(const handle&);
   };
 
-  concurrent_stack();
-  handle get_handle();
+  virtual ~concurrent_stack() {}
+  virtual handle* get_handle() = 0;
+  // NOTE: Each handle MUST be acquired and used in a single thread and
+  //       the handle MUST be deleted when no longer needed.
+protected:
+  concurrent_stack() {}
+private:
+  // Disallow copying and assignment.
+  concurrent_stack(const concurrent_stack&);
+  void operator=(const concurrent_stack&);
 };
-*/
+
 }
 
 // NOBLE
-#include "impl/concurrent_bag_NBLStack"
+#ifdef USE_NOBLE
+#include "impl/concurrent_stack_NBLStack"
+#endif
 
+#endif
