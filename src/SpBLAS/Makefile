@@ -5,7 +5,7 @@ CC = g++ -fopenmp
 
 OBJS = SpMatrix.o  SpTest.o SparseAccumulator.o
 
-CFLAGS += -g -O3 -Wall -I../include -DUSE_OPENMP
+CFLAGS += -std=c++11 -g -O3 -Wall -I../include -DUSE_OPENMP
 
 all: sptest
 

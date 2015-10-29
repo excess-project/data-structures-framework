@@ -7,36 +7,71 @@
 
 #include <EXCESS/concurrent_bag>
 
-#ifdef USE_LIBRSB 
-#include <rsb.h>
-#endif
-
 #include "SpMatrix.h"
 #include "SpGEMM_Gustavson.h"
 #include "SpGEMM_DSParallel.h"
+static void test_SpMM(std::string filename);
 
-static void test_SpMM(char* filename);
-#ifdef USE_LIBRSB
-static void test_librsb(char* filename);
+#ifdef USE_LIBRSB 
+#include <rsb.h>
+
+static void test_librsb(std::string filename);
 static std::string rsb_errortostr(rsb_err_t);
 #endif
 
-int main(int argc, char** argv)
-{
-  if (argc < 2) return 0;
+#ifdef USE_COMBBLAS
+#include <mpi.h>
+#include <CombBLAS.h>
 
-#ifdef USE_LIBRSB
-  std::cout << std::endl << "Testing librsb SpGEMM." << std::endl;
-  test_librsb(argv[1]);
+static void test_CombBLAS(std::string filename);
 #endif
 
-  std::cout << std::endl << "Testing own SpGEMM." << std::endl;
-  test_SpMM(argv[1]);
+static void process_arguments(int argc, char** argv);
+static void print_usage(int argc, char** argv);
+static bool try_parse(std::string s, int& i);
 
+const int no_algorithms = 3;
+typedef enum { OWN=0, LIBRSB, COMBBLAS} algorithm_t;
+
+static algorithm_t algorithm = OWN;
+static std::string matrix_filename;
+
+int main(int argc, char** argv)
+{
+  process_arguments(argc, argv);
+
+  switch (algorithm) {
+  case OWN:
+    std::cout << std::endl << "Testing own SpGEMM." << std::endl;
+    test_SpMM(matrix_filename);
+    break;
+  case LIBRSB:
+#ifdef USE_LIBRSB
+    std::cout << std::endl << "Testing librsb SpGEMM." << std::endl;
+    test_librsb(matrix_filename);
+#endif
+    break;
+  case COMBBLAS:
+#ifdef USE_COMBBLAS
+    int nprocs, myrank;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+    MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
+    if (!myrank) {
+      std::cout << std::endl << "Testing CombBLAS SpGEMM." << std::endl;
+    }
+    std::cout << "MPI: This is processor rank " << myrank
+              << " of " << nprocs << " processes." << std::endl;
+
+    test_CombBLAS(matrix_filename);
+    MPI_Finalize();
+#endif
+    break;
+  }
   return 0;
 }
 
-static void test_SpMM(char* filename)
+static void test_SpMM(std::string filename)
 {
   struct timespec t1, t2;
 
@@ -91,7 +126,7 @@ static void test_SpMM(char* filename)
 }
 
 #ifdef USE_LIBRSB
-static void test_librsb(char* filename)
+static void test_librsb(std::string filename)
 {
   struct timespec t1, t2;
   int errval;
@@ -107,7 +142,7 @@ static void test_librsb(char* filename)
   std::cout << "Attempting to load the matrix '" << filename << "' into A ... ";
   clock_gettime(CLOCK_REALTIME, &t1);
   struct rsb_mtx_t* A =
-    rsb_file_mtx_load(filename,
+    rsb_file_mtx_load(filename.c_str(),
                       RSB_FLAG_NOFLAGS,
                       RSB_NUMERICAL_TYPE_DOUBLE,
                       &errval);
@@ -136,6 +171,8 @@ static void test_librsb(char* filename)
               << "C = rsb_spmsp(A, A) ... ";
 
     clock_gettime(CLOCK_REALTIME, &t1);
+    // NOTE: According to the librsb docs rsb_spmsp ignores both
+    //       the transposition and alpha and beta parameters.
     struct rsb_mtx_t* C =
       rsb_spmsp(RSB_NUMERICAL_TYPE_DOUBLE,
                 RSB_TRANSPOSITION_N,
@@ -194,3 +231,138 @@ static std::string rsb_errortostr(rsb_err_t errval)
   }
 }
 #endif
+
+#ifdef USE_COMBBLAS
+static void test_CombBLAS(std::string filename)
+{
+  typedef SpDCCols < int, double > DCCols;
+  typedef SpParMat < int, double, DCCols > MPI_DCColMat;
+
+  int myrank;
+  double t1, t2;
+  MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
+
+  if (!myrank) {
+    std::cout << "Attempting to load the matrix '" << filename
+              << "' into A ... ";
+  }
+  t1 = MPI_Wtime();
+  MPI_DCColMat A;
+  A.ReadDistribute(filename, 0);
+  MPI_Barrier(MPI_COMM_WORLD);
+  t2 = MPI_Wtime();
+  if (!myrank) {
+    std::cout << "Ok." << std::endl;
+    A.PrintInfo();
+    std::cout << "Duration: "
+              << (t2 - t1)
+              << " sec" << std::endl;
+  }
+
+  // Reload A into a new matrix B as the matrices must be separate.
+  MPI_DCColMat B;
+  B.ReadDistribute(filename, 0);
+
+  {
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (!myrank) {
+      std::cout << "Attempting matrix-matrix multiplication "
+                << "C = (Mult_AnXBn_DoubleBuffA, A) ... ";
+    }
+
+    t1 = MPI_Wtime();    
+    MPI_DCColMat C =
+      Mult_AnXBn_DoubleBuff<PlusTimesSRing<double, double>, double, DCCols>
+        (A, B);
+    MPI_Barrier(MPI_COMM_WORLD);
+    t2 = MPI_Wtime();
+
+    if (!myrank) {
+      std::cout << "Ok." << std::endl;
+      C.PrintInfo();
+      std::cout << "Duration: "
+                << (t2 - t1)
+                << " sec" << std::endl;
+    }
+  }
+}
+#endif
+
+static void process_arguments(int argc, char** argv)
+{
+  using std::string;
+
+  int i = 1;
+  while (i < argc) {
+    string arg = string(argv[i]);
+    if (arg.compare("-h") == 0) {
+      print_usage(argc, argv);
+      exit(0);
+    } else if (arg.compare("-a") == 0) {
+      int algno;
+      int ok = 0;
+      if ((++i < argc) && try_parse(string(argv[i]), algno) &&
+          (0 <= algno) && (algno < no_algorithms)) {
+        algorithm = algorithm_t(algno);
+        ok = 1;
+      } else {
+        std::cerr << "Error: Bad algorithm# given with '-a " << argv[i] << "'."
+                  << std::endl;
+      }
+      if (!ok) {
+        print_usage(argc, argv);
+        exit(-1);
+      }
+    } else {
+      if (i == argc - 1) {
+        matrix_filename = string(argv[i]);
+      } else {
+        std::cerr << "Error: Unknown argument '" << argv[i] << "'."
+                  << std::endl;
+        print_usage(argc, argv);
+        exit(-1);
+      }
+    }
+    i++;
+  }
+}
+
+static void print_usage(int argc, char** argv)
+{
+  using std::cout;
+  using std::endl;
+
+  cout << endl;
+  cout << "EXCESS sparse matrix multiplication experiment." << endl;
+  //cout << "  Copyright (C) 2015  Anders Gidenstam" << endl;
+
+  cout << endl;
+  cout << "Usage: " << argv[0] << " [options] <matrix file>" << endl;
+  cout << endl;
+
+  cout << "  -h                Print this message and exit." << endl;
+  cout << "  -a <algorithm#>   Set the SpGEMM algorithm/library to use."
+       << endl;
+  cout << "                    <algorithm#> can be one of the following."
+       << endl;
+  {
+    cout << "                      " << "0.  " << "New EXCESS algorithm."
+         << endl;
+#ifdef USE_LIBRSB
+    cout << "                      " << "1.  " << "librsb."
+         << endl;
+#endif
+#ifdef USE_COMBBLAS
+    cout << "                      " << "2.  " << "CombBLAS."
+         << endl;
+#endif
+  }
+}
+
+ static bool try_parse(std::string s, int& i)
+{
+  std::stringstream ss(s);
+  char c;
+  ss >> i;
+  return !(ss.fail() || ss.get(c));
+}

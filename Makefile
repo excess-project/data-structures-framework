@@ -34,8 +34,14 @@ BLASDIR = /opt/OpenBLAS/st
 BLASLIB = $(BLASDIR)/lib/libopenblas.a
 
 #  librsb
-LIBRSBDIR = /opt/librsb/1.2.0-rc1
-LIBRSBLIB = -L$(LIBRSBDIR)/lib -lrsb
+#LIBRSBDIR = /opt/librsb/1.2.0-rc2
+#LIBRSBLIB = -L$(LIBRSBDIR)/lib -lrsb
+
+# CombBLAS
+#MPIDIR = /usr/lib/openmpi
+#MPILIB = -L$(MPIDIR)/lib -lmpi -lmpi_cxx
+#COMBBLASDIR = /opt/CombBLAS/14.0/
+#COMBBLASLIB = -L$(COMBBLASDIR)/lib -lCommGridlib -lMPITypelib
 
 #  EXCESS MF integration
 EXCESSMFDIR = /opt/mf/0.1.4
@@ -49,7 +55,8 @@ TGFLAGS += -DUSE_TBB
 #TGFLAGS += -DUSE_CCKHT
 #TGFLAGS += -DUSE_HSHT
 TGFLAGS += -DUSE_BLAS
-TGFLAGS += -DUSE_LIBRSB
+#TGFLAGS += -DUSE_LIBRSB
+#TGFLAGS += -DUSE_COMBBLAS
 TGFLAGS += -DNOSAVEMANDELBROT
 #TGFLAGS += -DUSE_EXCESS_MF
 
@@ -62,6 +69,7 @@ CFLAGS += -I$(CCKHT)
 CFLAGS += -I$(HSHT) -I$(HSHT)/data_structures
 CFLAGS += -I$(BLASDIR)/include
 CFLAGS += -I$(LIBRSBDIR)/include
+CFLAGS += -I$(MPIDIR)/include -I$(COMBBLASDIR)/src
 CFLAGS += -I$(EXCESSMFDIR)/include -DEXCESSMFURL=$(EXCESSMFURL)
 
 LDFLAGS = $(NOBLELIB) $(TBBLIB) $(BLASLIB) $(EXCESSMFLIB) -lrt
@@ -69,6 +77,7 @@ LDFLAGS += $(ETLLIB)
 LDFLAGS += $(CCKHTLIB)
 LDFLAGS += $(HSHTLIB)
 LDFLAGS += $(LIBRSBLIB)
+LDFLAGS += $(MPILIB) $(COMBBLASLIB)
 
 export
 
