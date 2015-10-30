@@ -9,8 +9,9 @@
 
 #include "SpMatrix.h"
 #include "SpGEMM_Gustavson.h"
+static void test_SpMM_sequential(std::string filename);
 #include "SpGEMM_DSParallel.h"
-static void test_SpMM(std::string filename);
+static void test_SpMM_DSParallel(std::string filename);
 
 #ifdef USE_LIBRSB 
 #include <rsb.h>
@@ -30,8 +31,8 @@ static void process_arguments(int argc, char** argv);
 static void print_usage(int argc, char** argv);
 static bool try_parse(std::string s, int& i);
 
-const int no_algorithms = 3;
-typedef enum { OWN=0, LIBRSB, COMBBLAS} algorithm_t;
+const int no_algorithms = 4;
+typedef enum { OWN=0, GUSTAVSON, LIBRSB, COMBBLAS} algorithm_t;
 
 static algorithm_t algorithm = OWN;
 static std::string matrix_filename;
@@ -42,8 +43,13 @@ int main(int argc, char** argv)
 
   switch (algorithm) {
   case OWN:
-    std::cout << std::endl << "Testing own SpGEMM." << std::endl;
-    test_SpMM(matrix_filename);
+    std::cout << std::endl << "Testing own parallel SpGEMM." << std::endl;
+    test_SpMM_DSParallel(matrix_filename);
+    break;
+  case GUSTAVSON:
+    std::cout << std::endl << "Testing sequential Gustavson SpGEMM."
+              << std::endl;
+    test_SpMM_sequential(matrix_filename);
     break;
   case LIBRSB:
 #ifdef USE_LIBRSB
@@ -71,7 +77,7 @@ int main(int argc, char** argv)
   return 0;
 }
 
-static void test_SpMM(std::string filename)
+static void test_SpMM_sequential(std::string filename)
 {
   struct timespec t1, t2;
 
@@ -104,6 +110,24 @@ static void test_SpMM(std::string filename)
                   1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
               << " sec" << std::endl;
   }
+}
+
+static void test_SpMM_DSParallel(std::string filename)
+{
+  struct timespec t1, t2;
+
+  std::cout << "Attempting to load the matrix '" << filename << "' into A ... ";
+  clock_gettime(CLOCK_REALTIME, &t1);
+  SpMatrix A = SpMatrix::LoadFromFile(filename);
+  clock_gettime(CLOCK_REALTIME, &t2);
+
+  std::cout << "Ok." << std::endl;
+  std::cout << "Got " << (A.m) << "x" << (A.n) << " matrix with "
+            << (A.nzmax) << " non-zeros." << std::endl;
+  std::cout << "Duration: "
+            << ((double)(t2.tv_sec - t1.tv_sec) +
+                1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
+            << " sec" << std::endl;
 
   {
     std::cout << "Attempting matrix matrix multiplication "
@@ -253,7 +277,9 @@ static void test_CombBLAS(std::string filename)
   t2 = MPI_Wtime();
   if (!myrank) {
     std::cout << "Ok." << std::endl;
-    A.PrintInfo();
+  }
+  A.PrintInfo();
+  if (!myrank) {
     std::cout << "Duration: "
               << (t2 - t1)
               << " sec" << std::endl;
@@ -270,7 +296,7 @@ static void test_CombBLAS(std::string filename)
                 << "C = (Mult_AnXBn_DoubleBuffA, A) ... ";
     }
 
-    t1 = MPI_Wtime();    
+    t1 = MPI_Wtime();
     MPI_DCColMat C =
       Mult_AnXBn_DoubleBuff<PlusTimesSRing<double, double>, double, DCCols>
         (A, B);
@@ -279,7 +305,9 @@ static void test_CombBLAS(std::string filename)
 
     if (!myrank) {
       std::cout << "Ok." << std::endl;
-      C.PrintInfo();
+    }
+    C.PrintInfo();
+    if (!myrank) {
       std::cout << "Duration: "
                 << (t2 - t1)
                 << " sec" << std::endl;
@@ -348,12 +376,14 @@ static void print_usage(int argc, char** argv)
   {
     cout << "                      " << "0.  " << "New EXCESS algorithm."
          << endl;
+    cout << "                      " << "1.  " << "Sequential Gustavson algorithm."
+         << endl;
 #ifdef USE_LIBRSB
-    cout << "                      " << "1.  " << "librsb."
+    cout << "                      " << "2.  " << "librsb."
          << endl;
 #endif
 #ifdef USE_COMBBLAS
-    cout << "                      " << "2.  " << "CombBLAS."
+    cout << "                      " << "3.  " << "CombBLAS."
          << endl;
 #endif
   }
