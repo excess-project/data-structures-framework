@@ -17,57 +17,69 @@ SpMatrix SpGEMM_Gustavson_RowStore(double alpha, const SpMatrix& A,
                                    double beta,  const SpMatrix& B)
 {
   assert(A.n == B.m);
-  double alphabeta = alpha*beta;
-  SparseAccumulator SPA(B.n);
   std::vector< SpMatrix::MatrixRow_t* > Ci;
   int* element_count = (int*)calloc(A.m, sizeof(int));
-  int nzmax = 0;
 
-  for (int ci = 0; ci < A.m; ci++) {
-    int aij  = A.rp[ci];
-    int aend =  A.rp[ci + 1];
-    for (; aij < aend; ++aij) {
-      int j    = A.ci[aij];
-      int bjk  = B.rp[j];
-      int bend = B.rp[j+1];
-      int vaij = A.v[aij];
-      for (; bjk < bend; ++bjk) {
-        int k = B.ci[bjk];
-        SPA.AddTo(k, vaij*B.v[bjk]);
-      }
-    }
-    // Save Ci* that is stored in the SPA.
-    std::vector<int>::const_iterator cik = SPA.nzs.begin();
-    std::vector<int>::const_iterator cend  = SPA.nzs.end();
+  {
+    double alphabeta = alpha*beta;
+    SparseAccumulator SPA(B.n);
 
-    int nnz = 0;
-    SpMatrix::MatrixRow_t* row = new SpMatrix::MatrixRow_t(ci, cend - cik);
-    for (; cik < cend; ++cik) {
-      double vcik = alphabeta*SPA.v[*cik];
-      if (vcik != 0.0) { // FIXME: cut off very small values too?
-        row->ci[nnz] = *cik;
-        row->v[nnz]  = vcik;
-        nnz++;
+    for (int ci = 0; ci < A.m; ++ci) {
+      int aij  = A.rp[ci];
+      int aend =  A.rp[ci + 1];
+      for (; aij < aend; ++aij) {
+        int j    = A.ci[aij];
+        int bjk  = B.rp[j];
+        int bend = B.rp[j+1];
+        int vaij = A.v[aij];
+        for (; bjk < bend; ++bjk) {
+          int k = B.ci[bjk];
+          SPA.AddTo(k, vaij*B.v[bjk]);
+        }
       }
+      // Save Ci* that is stored in the SPA.
+      std::vector<int>::const_iterator cik = SPA.nzs.begin();
+      std::vector<int>::const_iterator cend  = SPA.nzs.end();
+
+      int nnz = 0;
+      SpMatrix::MatrixRow_t* row = new SpMatrix::MatrixRow_t(ci, cend - cik);
+      for (; cik < cend; ++cik) {
+        double vcik = alphabeta*SPA.v[*cik];
+        if (vcik != 0.0) { // FIXME: cut off very small values too?
+          row->ci[nnz] = *cik;
+          row->v[nnz]  = vcik;
+          nnz++;
+        }
+      }
+      // Save the true #nz.
+      element_count[ci] = nnz;
+      Ci.push_back(row);
+      SPA.Clear();
     }
-    // Save the true #nz.
-    element_count[ci] = nnz;
-    nzmax += nnz;
-    Ci.push_back(row);
-    SPA.Clear();
   }
+
   // Create the result matrix C.
+  SpMatrix C(A.m, B.n, 0);
 
-  SpMatrix C(A.m, B.n, nzmax);
-  // Prepare the row pointers.
-  int nnz = 0;
-  int ci;
-  for (ci = 0; ci < C.m; ++ci) {
-    C.rp[ci] = nnz;
-    nnz += element_count[ci];
+  {
+    // Prepare the row pointers.
+    int nnz = 0;
+    int ri;
+    for (ri = 0; ri < C.m; ++ri) {
+      C.rp[ri] = nnz;
+      nnz += element_count[ri];
+    }
+    C.rp[ri] = nnz;
+
+    // Reallocate the ci and v vectors in C.
+    C.nzmax = nnz;
+    std::free(C.ci);
+    std::free(C.v);
+    C.ci = (int*)std::calloc(C.nzmax, sizeof(int));
+    C.v  = (double*)std::calloc(C.nzmax, sizeof(double));
   }
-  C.rp[ci] = nnz;
 
+  // Fill the result matrix C.
   while (!Ci.empty()) {
     SpMatrix::MatrixRow_t* ci = Ci.back();
     Ci.pop_back();
@@ -88,6 +100,7 @@ SpMatrix SpGEMM_Gustavson_RowStore(double alpha, const SpMatrix& A,
     delete ci;
   }
 
+  std::free(element_count);
   return C;
 }
 
