@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <unistd.h>
 
 #include "primitives.h"
 #include "SparseAccumulator.h"
