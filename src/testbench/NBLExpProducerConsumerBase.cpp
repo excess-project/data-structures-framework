@@ -65,6 +65,7 @@ vector<string> NBLExpProducerConsumerBase::GetImplementations()
   v.push_back(string("Queue NOBLE Lock-Free ELIM" NOBLE_STATUS));
   v.push_back(string("Queue NOBLE Lock-Based" NOBLE_STATUS));
   v.push_back(string("Queue TBB concurrent_queue" TBB_STATUS));
+  v.push_back(string("Queue M&S two-lock queue"));
   v.push_back(string("Stack NOBLE Lock-Free B" NOBLE_STATUS));
   v.push_back(string("Stack NOBLE Lock-Free ELIM" NOBLE_STATUS));
   v.push_back(string("Bag NOBLE Lock-Free BB" NOBLE_STATUS));
@@ -131,26 +132,30 @@ void NBLExpProducerConsumerBase::InitImplementationNr(int nr)
     exit(-1);
 #endif
     break;
-#ifdef USE_NOBLE
   case 8:
+    bag =
+      new excess::concurrent_bag_MSTLB<void>();
+    break;
+#ifdef USE_NOBLE
+  case 9:
     bag =
       new excess::concurrent_bag_NBLStack<void>
             (excess::concurrent_bag_NBLStack<void>::LF_B,
              NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
-  case 9:
+  case 10:
     bag =
       new excess::concurrent_bag_NBLStack<void>
             (excess::concurrent_bag_NBLStack<void>::LF_ELIM,
              NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
-  case 10:
+  case 11:
     bag =
       new excess::concurrent_bag_NBLBag<void>
             (excess::concurrent_bag_NBLBag<void>::LF_BB,
              NR_OPERS*NBLExpProducerConsumerBase::MAX_CPUS);
     break;
-  case 11:
+  case 12:
     bag =
       new excess::concurrent_bag_NBLBag<void>
             (excess::concurrent_bag_NBLBag<void>::LF_EDTREE,
@@ -164,10 +169,10 @@ void NBLExpProducerConsumerBase::InitImplementationNr(int nr)
   case 4:
   case 5:
   case 6:
-  case 8:
   case 9:
   case 10:
   case 11:
+  case 12:
     std::cerr << "Error: Compiled without NOBLE support!" << std::endl;
     exit(-1);
     break;

@@ -51,4 +51,7 @@ private:
 #include "impl/concurrent_queue_TBBQueue"
 #endif
 
+// Two-lock queue by M. Michael and M. Scott.
+#include "impl/concurrent_queue_MSTLB"
+
 #endif

@@ -1,0 +1,142 @@
+// concurrent_queue adapter instantiation for the two-lock queue from
+// [M. Michael and M. Scott, "Simple, Fast, and Practical Non-Blocking and
+// Blocking Concurrent Queue Algorithms", PODC, 1996]
+//   Copyright (C) 2015  Anders Gidenstam
+
+#ifndef __CONCURRENT_QUEUE_MSTLB_H
+#define __CONCURRENT_QUEUE_MSTLB_H
+
+#include <EXCESS/concurrent_queue>
+
+#include <EXCESS/spinlock>
+
+namespace excess {
+
+template < typename T >
+class concurrent_queue_MSTLB
+  : public concurrent_queue<T>
+{
+private:
+  struct node_t {
+    T*      value;
+    node_t* next;
+
+    node_t()
+    {
+      next = 0;
+    }
+    
+    node_t(T* value)
+    {
+      this->value = value;
+      this->next  = 0;
+    }
+  };
+
+  excess::locks::spinlock h_lock;
+  node_t* head;
+  volatile int padding[64/sizeof(int)];
+  excess::locks::spinlock t_lock;
+  node_t* tail;
+
+private:
+  void enqueue(T* item)
+  {
+    node_t* node = new node_t(item);
+
+    t_lock.lock();
+
+    tail->next = node;
+    tail       = node;
+
+    t_lock.unlock();
+  }
+
+  bool try_dequeue(T*& item)
+  {
+    h_lock.lock();
+    
+    node_t* node = head;
+    node_t* new_head = node->next;
+    if (!new_head) {
+      h_lock.unlock();
+
+      return false;
+    }
+    head = new_head;
+    item = node->value; // Is the value really there for weak memory models?
+    h_lock.unlock();
+
+    delete node;
+    return true;
+  }
+
+  bool empty()
+  {
+    h_lock.lock();
+
+    node_t* head_next = head->next;
+    bool empty = !head_next;
+
+    h_lock.unlock();
+    return empty;
+  }
+
+public:
+  class handle // Each instance MUST be acquired and used in a single thread.
+    : public concurrent_queue<T>::handle
+  {
+  private:
+    friend concurrent_queue_MSTLB;
+    concurrent_queue_MSTLB<T>* queue;
+
+    handle(concurrent_queue_MSTLB<T>* queue)
+    {
+      this->queue = queue;
+    }
+
+  public:
+    ~handle()
+    {
+      queue = 0;
+    }
+
+    void enqueue(T* item)
+    {
+      queue->enqueue(item);
+    }
+
+    bool try_dequeue(T*& item)
+    {
+      return queue->try_dequeue(item);
+    }
+
+    bool empty()
+    {
+      return queue->empty();
+    }
+  };
+
+  concurrent_queue_MSTLB()
+  {
+    head = new node_t();
+    tail = head;
+  }
+
+  ~concurrent_queue_MSTLB()
+  {
+    node_t* next;
+    for (node_t* n = head; n; n = next) {
+      next = n->next;
+      delete n;
+    }
+  }
+
+  handle* get_handle()
+  {
+    return new handle(this);
+  }
+};
+
+}
+#endif

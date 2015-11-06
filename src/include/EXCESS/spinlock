@@ -1,0 +1,40 @@
+// Simple test and test-and-set spinlock.
+//   Copyright (C) 2015  Anders Gidenstam
+namespace excess {
+namespace locks {
+
+// Test and test-and-set spin-lock without back-off.
+class spinlock {
+private:
+  volatile int flag;
+  
+public:
+  spinlock()
+  {
+    flag = 0;
+  }
+
+  void lock()
+  {
+    for (;;) {
+      if (!flag) {
+        if (0 == __sync_val_compare_and_swap_4(&flag, 0, 1)) {
+          return;
+        }
+      }
+    }
+  }
+
+  void unlock()
+  {
+    // Unlock with CAS as memory barrier.
+    __sync_val_compare_and_swap_4(&flag, 1, 0);
+  }
+
+private:
+  // Disallow copying and assignment.
+  spinlock(const spinlock&);
+  void operator=(const spinlock&);
+};
+
+}}
