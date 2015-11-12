@@ -11,7 +11,8 @@
 #include "SpGEMM_Gustavson.h"
 static void test_SpMM_sequential(std::string filename);
 #include "SpGEMM_DSParallel.h"
-static void test_SpMM_DSParallel(std::string filename);
+static void test_SpMM_DSParallelRS(std::string filename);
+static void test_SpMM_DSParallelTS(std::string filename);
 
 #ifdef USE_LIBRSB 
 #include <rsb.h>
@@ -32,9 +33,9 @@ static void print_usage(int argc, char** argv);
 static bool try_parse(std::string s, int& i);
 
 const int no_algorithms = 4;
-typedef enum { OWN=0, GUSTAVSON, LIBRSB, COMBBLAS} algorithm_t;
+typedef enum { OWN_RS=0, OWN_TS, GUSTAVSON, LIBRSB, COMBBLAS} algorithm_t;
 
-static algorithm_t algorithm = OWN;
+static algorithm_t algorithm = OWN_RS;
 static std::string matrix_filename;
 
 int main(int argc, char** argv)
@@ -42,9 +43,13 @@ int main(int argc, char** argv)
   process_arguments(argc, argv);
 
   switch (algorithm) {
-  case OWN:
-    std::cout << std::endl << "Testing own parallel SpGEMM." << std::endl;
-    test_SpMM_DSParallel(matrix_filename);
+  case OWN_RS:
+    std::cout << std::endl << "Testing own parallel RS SpGEMM." << std::endl;
+    test_SpMM_DSParallelRS(matrix_filename);
+    break;
+  case OWN_TS:
+    std::cout << std::endl << "Testing own parallel TS SpGEMM." << std::endl;
+    test_SpMM_DSParallelTS(matrix_filename);
     break;
   case GUSTAVSON:
     std::cout << std::endl << "Testing sequential Gustavson SpGEMM."
@@ -112,7 +117,7 @@ static void test_SpMM_sequential(std::string filename)
   }
 }
 
-static void test_SpMM_DSParallel(std::string filename)
+static void test_SpMM_DSParallelRS(std::string filename)
 {
   struct timespec t1, t2;
 
@@ -131,11 +136,48 @@ static void test_SpMM_DSParallel(std::string filename)
 
   {
     std::cout << "Attempting matrix matrix multiplication "
-              << "C = SpMM_DSParallel(A, A) ... ";
+              << "C = SpMM_DSParallelRS(A, A) ... ";
 
     clock_gettime(CLOCK_REALTIME, &t1);
     SpMatrix C =
       SpMM_DSParallel_RowStore<excess::concurrent_bag_TBBQueue>(A, A);
+      //SpMM_DSParallel_RowStore<excess::concurrent_bag_NBLBag>(A, A);
+    clock_gettime(CLOCK_REALTIME, &t2);
+
+    std::cout << "Ok." << std::endl;
+    std::cout << "Result C is " << (C.m) << "x" << (C.n) << " matrix with "
+              << (C.nzmax) << " non-zeros." << std::endl;
+    std::cout << "Duration: "
+              << ((double)(t2.tv_sec - t1.tv_sec) +
+                  1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
+              << " sec" << std::endl;
+  }
+}
+
+static void test_SpMM_DSParallelTS(std::string filename)
+{
+  struct timespec t1, t2;
+
+  std::cout << "Attempting to load the matrix '" << filename << "' into A ... ";
+  clock_gettime(CLOCK_REALTIME, &t1);
+  SpMatrix A = SpMatrix::LoadFromFile(filename);
+  clock_gettime(CLOCK_REALTIME, &t2);
+
+  std::cout << "Ok." << std::endl;
+  std::cout << "Got " << (A.m) << "x" << (A.n) << " matrix with "
+            << (A.nzmax) << " non-zeros." << std::endl;
+  std::cout << "Duration: "
+            << ((double)(t2.tv_sec - t1.tv_sec) +
+                1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
+            << " sec" << std::endl;
+
+  {
+    std::cout << "Attempting matrix matrix multiplication "
+              << "C = SpMM_DSParallelTS(A, A) ... ";
+
+    clock_gettime(CLOCK_REALTIME, &t1);
+    SpMatrix C =
+      SpMM_DSParallel_TripletStore<excess::concurrent_bag_TBBQueue>(A, A);
       //SpMM_DSParallel_RowStore<excess::concurrent_bag_NBLBag>(A, A);
     clock_gettime(CLOCK_REALTIME, &t2);
 
@@ -167,7 +209,7 @@ static void test_librsb(std::string filename)
   clock_gettime(CLOCK_REALTIME, &t1);
   struct rsb_mtx_t* A =
     rsb_file_mtx_load(filename.c_str(),
-                      RSB_FLAG_NOFLAGS,
+                      RSB_FLAG_NOFLAGS & ~RSB_FLAG_USE_HALFWORD_INDICES,
                       RSB_NUMERICAL_TYPE_DOUBLE,
                       &errval);
   clock_gettime(CLOCK_REALTIME, &t2);
@@ -374,16 +416,18 @@ static void print_usage(int argc, char** argv)
   cout << "                    <algorithm#> can be one of the following."
        << endl;
   {
-    cout << "                      " << "0.  " << "New EXCESS algorithm."
+    cout << "                      " << "0.  " << "New EXCESS algorithm with row store."
          << endl;
-    cout << "                      " << "1.  " << "Sequential Gustavson algorithm."
+    cout << "                      " << "1.  " << "New EXCESS algorithm with triplet store."
+         << endl;
+    cout << "                      " << "2.  " << "Sequential Gustavson algorithm."
          << endl;
 #ifdef USE_LIBRSB
-    cout << "                      " << "2.  " << "librsb."
+    cout << "                      " << "3.  " << "librsb."
          << endl;
 #endif
 #ifdef USE_COMBBLAS
-    cout << "                      " << "3.  " << "CombBLAS."
+    cout << "                      " << "4.  " << "CombBLAS."
          << endl;
 #endif
   }

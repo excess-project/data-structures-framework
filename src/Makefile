@@ -9,4 +9,5 @@ all: $(DIRS)
 
 clean:
 	cd testbench; $(MAKE) clean
+	cd SpBLAS; $(MAKE) clean
 #	@rm
