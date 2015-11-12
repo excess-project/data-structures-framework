@@ -25,10 +25,10 @@ echo "PBS_JOBNAME=$PBS_JOBNAME # The job name supplied by the user."
 
 # load module power/mf_shared
 # and get the new dbkey from the monitoring framework
-module load power/mf_shared/20
-DBKEY_STRING=$( get_unique_dbkey -d ${HOME}/.mf/dbkey/ -f ${PBS_JOBID} )
-DBKEY=$( echo ${DBKEY_STRING}| awk -v N=$N '{print $2}' )
-echo "Monitoring framework DBKEY = $DBKEY"
+#module load power/mf_shared/20
+#DBKEY_STRING=$( get_unique_dbkey -d ${HOME}/.mf/dbkey/ -f ${PBS_JOBID} )
+#DBKEY=$( echo ${DBKEY_STRING}| awk -v N=$N '{print $2}' )
+#echo "Monitoring framework DBKEY = $DBKEY"
 
 # Job environment
 export JOBDIR=/nas_home/andersg/EXCESS-software/data-structures-framework/PBS/producerconsumer_job/
@@ -43,8 +43,8 @@ echo "job is starting"
 export LOGBASE=producerconsumer_result_`date +%Y-%m-%d_%H.%M`
 export RMAINLOG=$LOGDIR/$LOGBASE-out.txt
 
-echo "PBS job $PBS_JOBID is starting..." >> $RMAINLOG
-echo "Monitoring framework $DBKEY" >> $RMAINLOG
+echo "PBS job $PBS_JOBID named $PBS_JOBNAME is starting..." >> $RMAINLOG
+echo "Monitoring framework key $DBKEY" >> $RMAINLOG
 
 PROGRAM=$HOME/EXCESS-software/data-structures-framework/testbench
 
@@ -63,8 +63,9 @@ SAMPLEDURATION="15"
 #   2. Queue NOBLE Lock-Free SB          3. Queue NOBLE Lock-Free BB
 #   4. Queue NOBLE Lock-Free BASKET      5. Queue NOBLE Lock-Free ELIM
 #   6. Queue NOBLE Lock-Based            7. Queue TBB concurrent_queue
-#   8. Stack NOBLE Lock-Free B           9. Stack NOBLE Lock-Free ELIM
-#   10. Bag NOBLE Lock-Free BB          11. Pool NOBLE Lock-Free EDTREE
+#   8. Queue M&S Two-lock queue          9. Stack NOBLE Lock-Free B
+#  10. Stack NOBLE Lock-Free ELIM       11. Bag NOBLE Lock-Free BB
+#  12. Pool NOBLE Lock-Free EDTREE
 #ALGORITHMS="0 1 2 3 4 5 6 7 8 9 10 11"
 ALGORITHMS="CASEALG"
 #ALGORITHMS="3"
@@ -91,11 +92,11 @@ export TEMPSAMPLE="$HOME/EXCESS-software/state-record-tool/read-coretemp -d $SAM
 
 for Frequency in $FREQUENCIES; do
     # Set the CPU frequency.
-    likwid-setFrequencies -f $Frequency
+    likwid-setFrequencies -f $Frequency >> $RMAINLOG
 
     sleep 5s
-    echo Verifying CPU frequency setting.
-    likwid-setFrequencies -p
+    echo Verifying CPU frequency setting. >> $RMAINLOG
+    likwid-setFrequencies -p >> $RMAINLOG
     sleep 5s
 
     for Threads in $THREADS; do
