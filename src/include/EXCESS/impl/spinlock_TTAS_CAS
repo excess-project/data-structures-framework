@@ -1,0 +1,46 @@
+// Simple test and test-and-set spinlock implemented with CAS.
+//   Copyright (C) 2015  Anders Gidenstam
+
+#ifndef __SPINLOCK_TTAS_CAS_H
+#define __SPINLOCK_TTAS_CAS_H
+
+#include <EXCESS/spinlock>
+
+namespace excess {
+namespace locks {
+
+// Test and test-and-set CAS-based spin-lock without back-off.
+// Each lock operation enforce a full memory barrier.
+class spinlock_TTAS_CAS
+  : spinlock {
+private:
+  volatile int flag;
+  
+public:
+  spinlock_TTAS_CAS()
+  {
+    flag = 0;
+  }
+
+  void lock()
+  {
+    for (;;) {
+      if (!flag) {
+        // Lock with CAS to also enforce a full memory barrier.
+        if (__sync_bool_compare_and_swap_4(&flag, 0, 1)) {
+          return;
+        }
+      }
+    }
+  }
+
+  void unlock()
+  {
+    // Unlock with CAS to enforce a full memory barrier.
+    __sync_bool_compare_and_swap_4(&flag, 1, 0);
+  }
+};
+
+}}
+
+#endif

@@ -1,0 +1,50 @@
+// Simple test and test-and-set spinlock based on GCC intrinsic with
+// acquire/release memory semantics.
+//   Copyright (C) 2015  Anders Gidenstam
+
+#ifndef __SPINLOCK_TTAS_ACQUIRERELEASE_H
+#define __SPINLOCK_TTAS_ACQUIRERELEASE_H
+
+#include <EXCESS/spinlock>
+
+namespace excess {
+namespace locks {
+
+// Test and test-and-set based on GCC acquire/release intrinsics
+// without back-off.
+// Locking enforces an acquire (post-read) memory barrier, unlocking a
+// release (pre-read,write) memory barrier.
+class spinlock_TTAS_AcquireRelease
+  : spinlock {
+private:
+  volatile int flag;
+  
+public:
+  spinlock_TTAS_AcquireRelease()
+  {
+    flag = 0;
+  }
+
+  void lock()
+  {
+    for (;;) {
+      if (!flag) {
+        // Lock and enforce an acquire memory barrier.
+        // The previous value of flag is returned.
+        if (!__sync_lock_test_and_set(&flag, 1)) {
+          return;
+        }
+      }
+    }
+  }
+
+  void unlock()
+  {
+    // Unlock with a release memory barrier.
+    __sync_lock_release(&flag);
+  }
+};
+
+}}
+
+#endif

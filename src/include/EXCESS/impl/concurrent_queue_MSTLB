@@ -12,7 +12,8 @@
 
 namespace excess {
 
-template < typename T >
+// NOTE: The Lock type used MUST enforce a read/write memory barrier on lock().
+template < typename T,  typename Lock = excess::locks::spinlock_TTAS_CAS >
 class concurrent_queue_MSTLB
   : public concurrent_queue<T>
 {
@@ -33,10 +34,10 @@ private:
     }
   };
 
-  excess::locks::spinlock h_lock;
+  Lock h_lock;
   node_t* head;
   volatile int padding[64/sizeof(int)];
-  excess::locks::spinlock t_lock;
+  Lock t_lock;
   node_t* tail;
 
 private:
@@ -44,7 +45,9 @@ private:
   {
     node_t* node = new node_t(item);
 
-    t_lock.lock();
+    t_lock.lock(); // MUST enforce a write memory barrier to ensure
+                   // that node->value is globally visible before the
+                   // next statement.
 
     tail->next = node;
     tail       = node;
@@ -57,7 +60,10 @@ private:
     h_lock.lock();
     
     node_t* node = head;
-    node_t* new_head = node->next;
+    node_t* new_head = node->next; // May get new node before t_lock.unlock()
+                                   // and, thus, see node->value uninitialized
+                                   // unless t_lock.lock() enforces a write
+                                   // barrier for the enqueuer.
     if (!new_head) {
       h_lock.unlock();
 
@@ -65,6 +71,9 @@ private:
     }
     head = new_head;
     item = node->value; // Is the value really there for weak memory models?
+                        // No, e.g. not for an acquire/release lock as
+                        // node->value might not be globally visible until
+                        // after t_lock.unlock().
     h_lock.unlock();
 
     delete node;
@@ -73,7 +82,7 @@ private:
 
   bool empty()
   {
-    h_lock.lock();
+    h_lock.lock(); // Must lock to be safe and linearizable.
 
     node_t* head_next = head->next;
     bool empty = !head_next;
