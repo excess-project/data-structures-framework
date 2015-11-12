@@ -22,7 +22,7 @@ public:
   class handle // Each instance MUST be acquired and used in a single thread.
     : public concurrent_bag<T>::handle
   {
-private:
+  private:
     friend concurrent_bag_MSTLB;
     typename concurrent_queue_MSTLB<T>::handle* queue;
 

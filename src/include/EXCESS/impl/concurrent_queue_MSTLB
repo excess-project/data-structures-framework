@@ -70,10 +70,10 @@ private:
       return false;
     }
     head = new_head;
-    item = node->value; // Is the value really there for weak memory models?
-                        // No, e.g. not for an acquire/release lock as
-                        // node->value might not be globally visible until
-                        // after t_lock.unlock().
+    item = new_head->value; // Is the value really safe in weaker memory models?
+                            // No, e.g. not for an acquire/release lock as
+                            // node->value might not be globally visible until
+                            // after t_lock.unlock().
     h_lock.unlock();
 
     delete node;
