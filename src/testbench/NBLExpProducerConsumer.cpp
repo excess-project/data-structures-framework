@@ -31,7 +31,6 @@
     for(int j=0;j<PRODUCER_PW;j++){             \
       PAUSE_BUNCH;                              \
     }                                           \
-    stop_cycle_count(trash);                    \
   } while(0)
 
 #define consumer_parallel_work()\
@@ -41,7 +40,6 @@
     for(int j=0;j<CONSUMER_PW;j++){             \
       PAUSE_BUNCH;                              \
     }                                           \
-    stop_cycle_count(trash);                    \
   } while(0)
 
 extern volatile int mainCounter;
