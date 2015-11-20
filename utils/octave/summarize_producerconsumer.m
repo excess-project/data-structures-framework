@@ -4,7 +4,7 @@
 FREQs = [3];
 %ALGs = [10];
 %ALGs = [0 3 7 10];
-ALGs = 0:11;
+ALGs = 0:12;
 %PPWs = [1 10];
 %PPWs = [1 10 150 500 1000];
 PPWs = [1 2 3 4 5 7 10 20 50 150 500 1000];
@@ -212,7 +212,116 @@ RUNs4 = [
 '/home/andersg/HLRS/results/producerconsumer_2015-03-11_09.17'
        ];
 
-RUNs = RUNs4;
+%% Algorithms: 0 1 2 3 4 5 6 7 8 11; Threads: 20; Pinning: 1; PPW=CPW=1
+RUNs5 = [
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_12.21'
+         ];
+
+%% Algorithms: 0 1 2 3 4 5 6 7 8; Threads: 2 4 6 8 10 12 14 16 18 20; Pinning: 1;
+%% PPW=CPW: 1 2 3 4 5 7 10 20 50 150 500 1000
+RUNs6 = [
+% Alg 0
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_16.55'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_17.44'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_18.34'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_19.22'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_20.11'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_21.00'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_21.49'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_22.38'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-12_23.27'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-13_00.15'
+% Alg 1
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_04.12'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_05.01'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_05.50'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_06.39'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_07.27'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_08.16'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_09.05'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_09.54'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_10.43'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_11.32'
+% Alg 2
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_12.20'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_13.09'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_13.58'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_14.47'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_15.36'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_16.25'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_17.13'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_18.02'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_18.51'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_19.40'
+% Alg 3
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_20.29'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_21.17'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_22.06'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_22.55'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-15_23.44'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_00.33'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_01.22'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_02.10'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_02.59'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_03.48'
+% Alg 4
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_04.37'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_05.26'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_06.15'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_07.03'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_07.52'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_08.41'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_09.30'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_10.19'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_11.08'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_11.56'
+% Alg 5
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_12.45'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_13.34'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_14.23'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_15.12'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_16.13'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_17.14'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_18.05'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_18.54'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_19.43'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_20.32'
+% Alg 6
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_21.21'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_22.09'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-16_23.10'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_00.13'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_01.14'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_02.16'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_03.17'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_04.18'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_05.20'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_06.22'
+% Alg 7
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_07.25'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_08.28'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_09.29'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_10.18'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-13_12.20'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_11.16'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_12.17'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_13.07'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_13.56'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_14.45'
+% Alg 8
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_15.36'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_16.25'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_17.18'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_18.06'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_18.55'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_19.44'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_20.33'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_21.22'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_22.11'
+'/home/andersg/HLRS/results/producerconsumer_2015-11-17_23.00'
+         ];
+
+RUNs = RUNs6;
 
 i = 1;
 res = [];
@@ -254,4 +363,11 @@ for d = 1:size(RUNs)(1)
     endfor
 endfor
 
+%% Layout of result file:
+%%   1-7:  freq alg threads pinning pattern ppw cpw
+%%   8-10: tp_insert tp_try_remove_ok tp_try_remove_empty
+%%  11-14: P_PKG_S1 P_PKG_S2 P_CPU_S1 P_CPU_S2
+%%  15-18: P_Uncore_S1 P_Uncore_S2 P_Mem_S1 P_Mem_S2
+%%  19-22: BCoV_PKG_S1 BCoV_PKG_S2 BCoV_CPU_S1 BCoV_CPU_S2
+%%  23-26: BCoV_Uncore_S1 BCoV_Uncore_S2 BCoV_Mem_S1 BCoV_Mem_S2
 csvwrite("result.res", res);
