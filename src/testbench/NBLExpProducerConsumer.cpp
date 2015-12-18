@@ -26,8 +26,6 @@
 
 #define producer_parallel_work()\
   do {                                          \
-    unsigned long trash;                        \
-    start_cycle_count(trash);                   \
     for(int j=0;j<PRODUCER_PW;j++){             \
       PAUSE_BUNCH;                              \
     }                                           \
@@ -35,8 +33,6 @@
 
 #define consumer_parallel_work()\
   do {                                          \
-    unsigned long trash;                        \
-    start_cycle_count(trash);                   \
     for(int j=0;j<CONSUMER_PW;j++){             \
       PAUSE_BUNCH;                              \
     }                                           \
