@@ -2,7 +2,7 @@
 %%
 %% Copyright (C) 2015-2016  Anders Gidenstam, Chalmers University of Technology
 %%
-%% The parallel work is in cycles.
+%% The parallel work is in cycles. See Section IV.D in the paper.
 %%
 function Tp_ob = EXCESS_IPDPS15_queue_model_basic_throughput(pw_o, params)
 
