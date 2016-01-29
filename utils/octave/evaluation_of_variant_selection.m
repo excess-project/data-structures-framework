@@ -114,7 +114,7 @@ for idx_d = 1:rows(E_range_pw_d)
     best_eff=0;
     for idx_impl = 1:rows(E_range_impl)
       if model(idx_impl,1) > 0
-        [Tp_d Tp_e Tp_dp Tp_dm Tp_ep Tp_em] = EXCESS_IPDPS15_queue_model_throughput(cycles_per_wu(idx_impl,1)*E_range_pw_d(idx_d), cycles_per_wu(idx_impl,1)*E_range_pw_e(idx_e), model(idx_impl,:));
+        [Tp_d Tp_e Tp_dp Tp_dm Tp_ep Tp_em] = EXCESS_IPDPS15_queue_model_throughput(cycles_per_wu(idx_impl)*E_range_pw_d(idx_d), cycles_per_wu(idx_impl)*E_range_pw_e(idx_e), model(idx_impl,:));
 
         eff = min([Tp_e Tp_d]);
         if eff > best_eff
