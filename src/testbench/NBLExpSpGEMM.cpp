@@ -1,6 +1,6 @@
 // Sparse matrix-matrix multiplication benchmark for the EXCESS experiment
 // framework.
-//   Copyright (C) 2015  Anders Gidenstam
+//   Copyright (C) 2015 - 2016  Anders Gidenstam
 //
 
 #include "NBLExpSpGEMM.h"
@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <ctime>
 #include <unistd.h>
 
 #include "primitives.h"
@@ -147,7 +148,9 @@ void NBLExpSpGEMM::InitImplementationNr(int nr)
   // Initialization for one m-m multiplication.
   phase1 = 0;
   phase2 = 0;
+  phase2_start = 0;
   phase3 = 0;
+  phase3_start = 0;
   nextci = 0;
   for (int i = 0; i < A.m; ++i) {
     element_count[i] = 0;
@@ -161,6 +164,7 @@ void NBLExpSpGEMM::RunImplementationNr(int nr, int threadID)
   long countInsert = 0;
   long countOkTryRemove = 0;
   long countEmptyTryRemove = 0;
+  struct timespec cur_time;
 
   handle_t* handle = ThreadInitImplementationNr(nr);
 
@@ -199,10 +203,17 @@ void NBLExpSpGEMM::RunImplementationNr(int nr, int threadID)
       }
       if (!p2) {
         // Perform the sequential phase 2.
+        clock_gettime(CLOCK_REALTIME, &cur_time);
+        phase2_start = ((long double)cur_time.tv_sec +
+                        1e-9 * (long double)cur_time.tv_nsec);
+
         SpMM_DSParallel_RowStore_2S(C, element_count);
         
         // Launch phase 3.
         FAA32(&phase3, 1);
+        clock_gettime(CLOCK_REALTIME, &cur_time);
+        phase3_start = ((long double)cur_time.tv_sec +
+                        1e-9 * (long double)cur_time.tv_nsec);
       } else {
         // Wait for phase 3 to begin.
         while (phase3 == 0) {
@@ -229,11 +240,14 @@ void NBLExpSpGEMM::RunImplementationNr(int nr, int threadID)
 string NBLExpSpGEMM::GetStatistics()
 {
   std::stringstream ss;
-  ss << NBLExpProducerConsumerBase::GetStatistics()
+  ss << std::setprecision(std::numeric_limits<long double>::digits10)
+     << NBLExpProducerConsumerBase::GetStatistics()
      << " " << matrix
      << " " << mmalg
      << " " << A.m
-     << " " << WUSize;
+     << " " << WUSize
+     << " " << phase2_start
+     << " " << phase3_start;
   return ss.str();
 }
 
@@ -244,7 +258,9 @@ string NBLExpSpGEMM::GetStatisticsLegend()
      << " <matrix no.>"
      << " <mm algorithm>"
      << " <square matrix dimension N>"
-     << " <work unit size>";
+     << " <work unit size>"
+     << " <phase 2 start time>"
+     << " <phase 3 start time>";
   return ss.str();
 }
 

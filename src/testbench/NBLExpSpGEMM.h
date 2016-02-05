@@ -1,6 +1,6 @@
 // Sparse matrix-matrix multiplication benchmark for the EXCESS experiment
 // framework.
-//   Copyright (C) 2015  Anders Gidenstam
+//   Copyright (C) 2015 - 2016  Anders Gidenstam
 //
 #pragma once
 #include "NBLExpProducerConsumerBase.h"
@@ -46,7 +46,9 @@ protected:
   SpMatrix C;
   volatile int phase1;
   volatile int phase2;
+  long double  phase2_start;
   volatile int phase3;
+  long double  phase3_start;
   volatile int nextci;
   int* element_count;
 };
