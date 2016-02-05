@@ -1,6 +1,6 @@
 // Sparse double matrix GEMM implementation based on the classical algorithm
 // in [Gustavson, ACM TMS 4(3), 1978].
-//   Copyright (C) 2015  Anders Gidenstam
+//   Copyright (C) 2015 - 2016  Anders Gidenstam
 
 #ifndef __SPGEMM_GUSTAVSON_H
 #define __SPGEMM_GUSTAVSON_H
@@ -75,8 +75,8 @@ SpMatrix SpGEMM_Gustavson_RowStore(double alpha, const SpMatrix& A,
     C.nzmax = nnz;
     std::free(C.ci);
     std::free(C.v);
-    C.ci = (int*)std::calloc(C.nzmax, sizeof(int));
-    C.v  = (double*)std::calloc(C.nzmax, sizeof(double));
+    C.ci = (int*)std::malloc(C.nzmax * sizeof(int));
+    C.v  = (double*)std::malloc(C.nzmax * sizeof(double));
   }
 
   // Fill the result matrix C.

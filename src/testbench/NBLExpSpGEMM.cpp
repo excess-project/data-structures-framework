@@ -26,6 +26,10 @@ NBLExpSpGEMM::NBLExpSpGEMM(void)
     A(SpMatrix(0, 0, 0)), C(SpMatrix(0, 0, 0)),
     phase1(0), phase2(0), phase3(0), nextci(0), element_count(0)
 {
+#ifdef SPGEMM_USE_MUTEX
+  pthread_mutex_init(&phase2_mutex, NULL);
+  pthread_cond_init(&phase2_condition, NULL);
+#endif
 }
 
 NBLExpSpGEMM::~NBLExpSpGEMM(void)
@@ -41,6 +45,11 @@ NBLExpSpGEMM::~NBLExpSpGEMM(void)
   */
 
   std::free(element_count);
+#ifdef SPGEMM_USE_MUTEX
+  pthread_mutex_destroy(&phase2_mutex);
+  pthread_cond_destroy(&phase2_condition);
+#endif
+
 }
 
 string NBLExpSpGEMM::GetExperimentName()
@@ -190,9 +199,17 @@ void NBLExpSpGEMM::RunImplementationNr(int nr, int threadID)
                                   countInsert);
       FAA32(&phase1, 1);
       // Wait for all.
+#ifndef SPGEMM_USE_MUTEX
       while (phase1 < NR_CPUS) {
         usleep(0);
       }
+#else
+      pthread_mutex_lock(&phase2_mutex);
+      // Let the last thread pass.
+      while (phase1 < NR_CPUS) {
+        pthread_cond_wait(&phase2_condition, &phase2_mutex);
+      }
+#endif
     }
     
     // Sequential phase 2.
@@ -202,7 +219,7 @@ void NBLExpSpGEMM::RunImplementationNr(int nr, int threadID)
         p2 = FAA32(&phase2, 1);
       }
       if (!p2) {
-        // Perform the sequential phase 2.
+        // Perform the sequential phase 2. Done by the first thread through.
         clock_gettime(CLOCK_REALTIME, &cur_time);
         phase2_start = ((long double)cur_time.tv_sec +
                         1e-9 * (long double)cur_time.tv_nsec);
@@ -210,18 +227,28 @@ void NBLExpSpGEMM::RunImplementationNr(int nr, int threadID)
         SpMM_DSParallel_RowStore_2S(C, element_count);
         
         // Launch phase 3.
+#ifndef SPGEMM_USE_MUTEX
         FAA32(&phase3, 1);
+#else
+        pthread_mutex_unlock(&phase2_mutex);
+        pthread_cond_broadcast(&phase2_condition);
+#endif
         clock_gettime(CLOCK_REALTIME, &cur_time);
         phase3_start = ((long double)cur_time.tv_sec +
                         1e-9 * (long double)cur_time.tv_nsec);
       } else {
+#ifndef SPGEMM_USE_MUTEX
         // Wait for phase 3 to begin.
         while (phase3 == 0) {
           usleep(0);
         }
+#else
+        // Let the next thread proceed into phase3 too.
+        pthread_mutex_unlock(&phase2_mutex);
+#endif
       }
     } // end phase 2
-    
+
     // Parallel phase 3.
     SpMM_DSParallel_RowStore_3P(C, handle, element_count,
                                 countOkTryRemove, countEmptyTryRemove);
@@ -335,8 +362,8 @@ void NBLExpSpGEMM::SpMM_DSParallel_RowStore_2S(SpMatrix& C, int* element_count)
   C.nzmax = nnz;
   std::free(C.ci);
   std::free(C.v);
-  C.ci = (int*)std::calloc(C.nzmax, sizeof(int));
-  C.v  = (double*)std::calloc(C.nzmax, sizeof(double));
+  C.ci = (int*)std::malloc(C.nzmax * sizeof(int));
+  C.v  = (double*)std::malloc(C.nzmax * sizeof(double));
 }
 
 void NBLExpSpGEMM::SpMM_DSParallel_RowStore_3P(SpMatrix& C,

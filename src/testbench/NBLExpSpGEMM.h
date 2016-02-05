@@ -6,6 +6,9 @@
 #include "NBLExpProducerConsumerBase.h"
 
 #include <SpMatrix.h>
+#ifdef SPGEMM_USE_MUTEX
+#include <pthread.h>
+#endif
 
 class NBLExpSpGEMM : public NBLExpProducerConsumerBase
 {
@@ -51,4 +54,8 @@ protected:
   long double  phase3_start;
   volatile int nextci;
   int* element_count;
+#ifdef SPGEMM_USE_MUTEX
+  pthread_mutex_t phase2_mutex;
+  pthread_cond_t  phase2_condition;
+#endif
 };

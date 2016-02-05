@@ -3,7 +3,7 @@
 // New(?) SpMM_DSParallel_RowStore/TripletStore algorithms by Anders Gidenstam,
 // inspired by the classical sequential algorithm in [Gustavson, ACM TMS 4(3),
 // 1978].
-//   Copyright (C) 2015  Anders Gidenstam
+//   Copyright (C) 2015 - 2016  Anders Gidenstam
 
 #ifndef __SPGEMM_CDS_H
 #define __SPGEMM_CDS_H
@@ -103,8 +103,8 @@ void SpGEMM_DSParallel_RowStore_2S
   C.nzmax = nnz;
   std::free(C.ci);
   std::free(C.v);
-  C.ci = (int*)std::calloc(C.nzmax, sizeof(int));
-  C.v  = (double*)std::calloc(C.nzmax, sizeof(double));
+  C.ci = (int*)std::malloc(C.nzmax * sizeof(int));
+  C.v  = (double*)std::malloc(C.nzmax * sizeof(double));
 }
 
 // Internal function: 2nd parallel phase.
@@ -161,7 +161,7 @@ SpMatrix SpGEMM_DSParallel_RowStore(double alpha, const SpMatrix& A,
 
   // Fill C in parallel from the row store.
 #pragma omp parallel
-  { 
+  {
     SpGEMM_DSParallel_RowStore_3P<concurrent_bag_t>(C, Ci_bag, element_count);
   }
 
@@ -253,8 +253,8 @@ SpMatrix SpGEMM_DSParallel_TripletStore(double alpha, const SpMatrix& A,
   C.nzmax = nnz;
   std::free(C.ci);
   std::free(C.v);
-  C.ci = (int*)std::calloc(C.nzmax, sizeof(int));
-  C.v  = (double*)std::calloc(C.nzmax, sizeof(double));
+  C.ci = (int*)std::malloc(C.nzmax * sizeof(int));
+  C.v  = (double*)std::malloc(C.nzmax * sizeof(double));
 
   // Fill C in parallel from the triplet store.
 #pragma omp parallel

@@ -1,5 +1,5 @@
 // Sparse double matrix for sparse BLAS type of operations.
-//   Copyright (C) 2015  Anders Gidenstam
+//   Copyright (C) 2015 - 2016  Anders Gidenstam
 
 #include "SpMatrix.h"
 
@@ -134,8 +134,8 @@ SpMatrix::MatrixRow_t::MatrixRow_t(int row, int nzmax)
 {
   this->row   = row;
   this->nzmax = nzmax;
-  ci = (int*)calloc(nzmax, sizeof(int));
-  v  = (double*)calloc(nzmax, sizeof(double));
+  ci = (int*)malloc(nzmax * sizeof(int));
+  v  = (double*)malloc(nzmax * sizeof(double));
 }
 
 SpMatrix::MatrixRow_t::~MatrixRow_t()
