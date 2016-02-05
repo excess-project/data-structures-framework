@@ -5,13 +5,13 @@ FREQs = [3];
 %ALGs = [3];
 ALGs = 0:12;
 THREADs = [2 4 6 8 10 12 14 16 18 20];
-%THREADs = [10];
+%THREADs = [2];
 MMALGs = [1];
-MATRICES = [1 2];
+MATRICES = [0 1 2];
 %MATRICES = [2];
 WUSIZEs = [4];
 
-plotpower=1;
+plotpower=0;
 
 %% Algorithms: -; Threads: 1; Pinning: 1; MMAlg: 0; Matrix: 0 1 2; WUSize: -;
 %% calloc used in phase 2.
@@ -202,5 +202,27 @@ for d = 1:size(RUNs)(1)
     endfor
   endfor
 endfor
+
+%% Layout of result file:
+%%   1-6:  freq collection_alg threads pinning matrix mmalg
+%%   7-10: total_duration phase1_duration phase2_duration phase3_duration
+%%  11-13: #inserts  #non-empty_TryRemoves #empty_TryRemoves
+%%  14-17: P_PKG_S1       P_PKG_S2       P_CPU_S1    P_CPU_S2
+%%  18-21: P_Uncore_S1    P_Uncore_S2    P_Mem_S1    P_Mem_S2
+%%  22-25: P_PKG_S1_p1    P_PKG_S2_p1    P_CPU_S1_p1 P_CPU_S2_p1
+%%  26-29: P_Uncore_S1_p1 P_Uncore_S2_p1 P_Mem_S1_p1 P_Mem_S2_p1
+%%  30-33: P_PKG_S1_p2    P_PKG_S2_p2    P_CPU_S1_p2 P_CPU_S2_p2
+%%  34-37: P_Uncore_S1_p2 P_Uncore_S2_p2 P_Mem_S1_p2 P_Mem_S2_p2
+%%  38-41: P_PKG_S1_p3    P_PKG_S2_p3    P_CPU_S1_p3 P_CPU_S2_p3
+%%  42-45: P_Uncore_S1_p3 P_Uncore_S2_p3 P_Mem_S1_p3 P_Mem_S2_p3
+%%
+%%  46-49: BCoV_PKG_S1       BCoV_PKG_S2       BCoV_CPU_S1    BCoV_CPU_S2
+%%  50-53: BCoV_Uncore_S1    BCoV_Uncore_S2    BCoV_Mem_S1    BCoV_Mem_S2
+%%  54-57: BCoV_PKG_S1_p1    BCoV_PKG_S2_p1    BCoV_CPU_S1_p1 BCoV_CPU_S2_p1
+%%  58-61: BCoV_Uncore_S1_p1 BCoV_Uncore_S2_p1 BCoV_Mem_S1_p1 BCoV_Mem_S2_p1
+%%  62-65: BCoV_PKG_S1_p2    BCoV_PKG_S2_p2    BCoV_CPU_S1_p2 BCoV_CPU_S2_p2
+%%  66-69: BCoV_Uncore_S1_p2 BCoV_Uncore_S2_p2 BCoV_Mem_S1_p2 BCoV_Mem_S2_p2
+%%  70-73: BCoV_PKG_S1_p3    BCoV_PKG_S2_p3    BCoV_CPU_S1_p3 BCoV_CPU_S2_p3
+%%  74-77: BCoV_Uncore_S1_p3 BCoV_Uncore_S2_p3 BCoV_Mem_S1_p3 BCoV_Mem_S2_p3
 
 csvwrite("result.res", res);
