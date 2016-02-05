@@ -4,12 +4,12 @@
 FREQs = [3];
 %ALGs = [3];
 ALGs = 0:12;
-THREADs = [2 4 6 8 10 12 14 16 18 20];
-%THREADs = [2];
-MMALGs = [1];
+THREADs = [1 2 4 6 8 10 12 14 16 18 20];
+%THREADs = [20];
+MMALGs = [0 1];
 MATRICES = [0 1 2];
 %MATRICES = [2];
-WUSIZEs = [4];
+WUSIZEs = [2 4 8 16];
 
 plotpower=0;
 
@@ -17,7 +17,7 @@ plotpower=0;
 %% calloc used in phase 2.
 RUNs1 = [
 '/home/andersg/HLRS/results/SpGEMM_2016-02-04_14.14'
-]
+         ];
 
 %% Algorithms: 0 1 2 3 4 5 6 7 8 9 10 11; Threads: 2 4 6 8 10 12 14 16 18 20; Pinning: 1; MMAlg: 1; Matrix: 1 2; WUSize: 4;
 %% calloc used during phase 1 and phase 2.
@@ -155,11 +155,17 @@ RUNs2 = [
         ];
 
 %% Algorithms: 0 1 2 3 4 5 6 7 8 9 10 11 12; Threads: 20; Pinning: 1; MMAlg: 1; Matrix: 2; WUSize: 2 4 8 16;
-%% malloc used during phase 1 and phase 2.
+%% malloc used during phase 1 and phase 2; mutex + condition used for phase 2.
 RUNs3 = [
+'/home/andersg/HLRS/results/SpGEMM_2016-02-05_14.22'
          ];
 
-RUNs = RUNs2;
+%% Algorithms: 0 1 2 3 4 5 6 7 8 9 10 11 12; Threads: 20; Pinning: 1; MMAlg: 1; Matrix: 2; WUSize: 2 4 8 16;
+%% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
+RUNs4 = [
+         ];
+
+RUNs = RUNs3;
 
 i = 1;
 res = [];
@@ -184,10 +190,10 @@ for d = 1:size(RUNs)(1)
 
                 [info, err] = stat(resfile);
                 if (err == 0)
-                  [alg threads pinning matrix mmalg durations operations RAPL_powers RAPL_powers_biased_coef_of_var] = summarize_SpGEMM_case(basename, algname, casename, plotpower);
+                  [alg threads pinning matrix mmalg wus durations operations RAPL_powers RAPL_powers_biased_coef_of_var] = summarize_SpGEMM_case(basename, algname, casename, plotpower);
                   %printf("succeeded\n");
 
-                  res(i,:) = [f alg threads pinning matrix mmalg durations operations RAPL_powers RAPL_powers_biased_coef_of_var];
+                  res(i,:) = [f alg threads pinning matrix mmalg wus durations operations RAPL_powers RAPL_powers_biased_coef_of_var];
                   i = i+1;
                 else
                   %printf("failed\n");
@@ -204,25 +210,25 @@ for d = 1:size(RUNs)(1)
 endfor
 
 %% Layout of result file:
-%%   1-6:  freq collection_alg threads pinning matrix mmalg
-%%   7-10: total_duration phase1_duration phase2_duration phase3_duration
-%%  11-13: #inserts  #non-empty_TryRemoves #empty_TryRemoves
-%%  14-17: P_PKG_S1       P_PKG_S2       P_CPU_S1    P_CPU_S2
-%%  18-21: P_Uncore_S1    P_Uncore_S2    P_Mem_S1    P_Mem_S2
-%%  22-25: P_PKG_S1_p1    P_PKG_S2_p1    P_CPU_S1_p1 P_CPU_S2_p1
-%%  26-29: P_Uncore_S1_p1 P_Uncore_S2_p1 P_Mem_S1_p1 P_Mem_S2_p1
-%%  30-33: P_PKG_S1_p2    P_PKG_S2_p2    P_CPU_S1_p2 P_CPU_S2_p2
-%%  34-37: P_Uncore_S1_p2 P_Uncore_S2_p2 P_Mem_S1_p2 P_Mem_S2_p2
-%%  38-41: P_PKG_S1_p3    P_PKG_S2_p3    P_CPU_S1_p3 P_CPU_S2_p3
-%%  42-45: P_Uncore_S1_p3 P_Uncore_S2_p3 P_Mem_S1_p3 P_Mem_S2_p3
+%%   1-7:  freq collection_alg threads pinning matrix mmalg wus
+%%   8-11: total_duration phase1_duration phase2_duration phase3_duration
+%%  12-14: #inserts  #non-empty_TryRemoves #empty_TryRemoves
+%%  15-18: P_PKG_S1       P_PKG_S2       P_CPU_S1    P_CPU_S2
+%%  19-22: P_Uncore_S1    P_Uncore_S2    P_Mem_S1    P_Mem_S2
+%%  23-26: P_PKG_S1_p1    P_PKG_S2_p1    P_CPU_S1_p1 P_CPU_S2_p1
+%%  27-30: P_Uncore_S1_p1 P_Uncore_S2_p1 P_Mem_S1_p1 P_Mem_S2_p1
+%%  31-34: P_PKG_S1_p2    P_PKG_S2_p2    P_CPU_S1_p2 P_CPU_S2_p2
+%%  35-38: P_Uncore_S1_p2 P_Uncore_S2_p2 P_Mem_S1_p2 P_Mem_S2_p2
+%%  39-42: P_PKG_S1_p3    P_PKG_S2_p3    P_CPU_S1_p3 P_CPU_S2_p3
+%%  43-46: P_Uncore_S1_p3 P_Uncore_S2_p3 P_Mem_S1_p3 P_Mem_S2_p3
 %%
-%%  46-49: BCoV_PKG_S1       BCoV_PKG_S2       BCoV_CPU_S1    BCoV_CPU_S2
-%%  50-53: BCoV_Uncore_S1    BCoV_Uncore_S2    BCoV_Mem_S1    BCoV_Mem_S2
-%%  54-57: BCoV_PKG_S1_p1    BCoV_PKG_S2_p1    BCoV_CPU_S1_p1 BCoV_CPU_S2_p1
-%%  58-61: BCoV_Uncore_S1_p1 BCoV_Uncore_S2_p1 BCoV_Mem_S1_p1 BCoV_Mem_S2_p1
-%%  62-65: BCoV_PKG_S1_p2    BCoV_PKG_S2_p2    BCoV_CPU_S1_p2 BCoV_CPU_S2_p2
-%%  66-69: BCoV_Uncore_S1_p2 BCoV_Uncore_S2_p2 BCoV_Mem_S1_p2 BCoV_Mem_S2_p2
-%%  70-73: BCoV_PKG_S1_p3    BCoV_PKG_S2_p3    BCoV_CPU_S1_p3 BCoV_CPU_S2_p3
-%%  74-77: BCoV_Uncore_S1_p3 BCoV_Uncore_S2_p3 BCoV_Mem_S1_p3 BCoV_Mem_S2_p3
+%%  47-50: BCoV_PKG_S1       BCoV_PKG_S2       BCoV_CPU_S1    BCoV_CPU_S2
+%%  51-54: BCoV_Uncore_S1    BCoV_Uncore_S2    BCoV_Mem_S1    BCoV_Mem_S2
+%%  55-58: BCoV_PKG_S1_p1    BCoV_PKG_S2_p1    BCoV_CPU_S1_p1 BCoV_CPU_S2_p1
+%%  59-62: BCoV_Uncore_S1_p1 BCoV_Uncore_S2_p1 BCoV_Mem_S1_p1 BCoV_Mem_S2_p1
+%%  63-66: BCoV_PKG_S1_p2    BCoV_PKG_S2_p2    BCoV_CPU_S1_p2 BCoV_CPU_S2_p2
+%%  67-70: BCoV_Uncore_S1_p2 BCoV_Uncore_S2_p2 BCoV_Mem_S1_p2 BCoV_Mem_S2_p2
+%%  71-74: BCoV_PKG_S1_p3    BCoV_PKG_S2_p3    BCoV_CPU_S1_p3 BCoV_CPU_S2_p3
+%%  75-78: BCoV_Uncore_S1_p3 BCoV_Uncore_S2_p3 BCoV_Mem_S1_p3 BCoV_Mem_S2_p3
 
 csvwrite("result.res", res);

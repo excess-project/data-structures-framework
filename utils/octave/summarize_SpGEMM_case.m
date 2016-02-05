@@ -1,7 +1,7 @@
 %% Summarize the result of one SpGEMM testbench case.
 %% Anders Gidenstam  2016
 
-function [alg threads pinning matrix mmalg durations operations RAPL_powers RAPL_powers_biased_coef_of_vars] = summarize_SpGEMM_case(basename, algname, casename, plot_power)
+function [alg threads pinning matrix mmalg wus durations operations RAPL_powers RAPL_powers_biased_coef_of_vars] = summarize_SpGEMM_case(basename, algname, casename, plot_power)
 
   res = load_case_result(basename, algname, casename);
   %% File format:
@@ -24,6 +24,7 @@ function [alg threads pinning matrix mmalg durations operations RAPL_powers RAPL
   pinning  = res(3);
   matrix   = res(10);
   mmalg    = res(11);
+  wus      = res(13);
   duration = res(4);
   phase1   = res(14) - res(6);
   phase2   = res(15) - res(14);
@@ -48,7 +49,14 @@ function [alg threads pinning matrix mmalg durations operations RAPL_powers RAPL
     %% FIXME: Sample a subset of the full phase durations?
     RAPL_t_avg_p1(lookup(t_rapl, res(6))+1 : lookup(t_rapl, res(6)+phase1)) = 1;
     RAPL_t_avg_p1 = logical(RAPL_t_avg_p1);
-    RAPL_t_avg_p2(lookup(t_rapl, res(6)+phase1)+1 : lookup(t_rapl, res(6)+phase1+phase2)) = 1;
+    %% Phase 2 may be very short.
+    if phase2 < 0.2
+      %%   Include one point from the end of phase 1 and one from the beginning
+      %%   of phase 3.
+      RAPL_t_avg_p2(lookup(t_rapl, res(6)+phase1) : lookup(t_rapl, res(6)+phase1+phase2)+1) = 1;
+    else
+      RAPL_t_avg_p2(lookup(t_rapl, res(6)+phase1)+1 : lookup(t_rapl, res(6)+phase1+phase2)) = 1;
+    endif
     RAPL_t_avg_p2 = logical(RAPL_t_avg_p2);
     RAPL_t_avg_p3(lookup(t_rapl, res(6)+phase1+phase2)+1 : lookup(t_rapl, res(6)+duration)) = 1;
     RAPL_t_avg_p3 = logical(RAPL_t_avg_p3);
