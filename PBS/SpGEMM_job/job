@@ -57,8 +57,8 @@ THREADS="CASETHREADS"
 # $KILLDURATION must be sufficiently larger than $PRGDURATION or
 # the case may be terminated prematurely.
 # $SAMPLEDURATION should be less than the total case duration.
-KILLDURATION="70"
-SAMPLEDURATION="70"
+KILLDURATION="60"
+SAMPLEDURATION="60"
 #   0. Queue NOBLE Lock-Free DB          1. Queue NOBLE Lock-Free DU
 #   2. Queue NOBLE Lock-Free SB          3. Queue NOBLE Lock-Free BB
 #   4. Queue NOBLE Lock-Free BASKET      5. Queue NOBLE Lock-Free ELIM
@@ -66,18 +66,18 @@ SAMPLEDURATION="70"
 #   8. Queue M&S Two-lock queue          9. Stack NOBLE Lock-Free B
 #  10. Stack NOBLE Lock-Free ELIM       11. Bag NOBLE Lock-Free BB
 #  12. Pool NOBLE Lock-Free EDTREE
-#ALGORITHMS="0 1 2 3 4 5 6 7 8 9 10 11"
-ALGORITHMS="CASEALG"
+ALGORITHMS="0 1 2 3 4 5 6 7 8 9 10 11 12"
+#ALGORITHMS="CASEALG"
 #ALGORITHMS="3"
 # Matrix
 #   0. R14; 1. R15; 2. R16 (default 0)
-MATRICES="2 3"
+MATRICES="2"
 # MxM alg:
 #   0. sequential Gustavson.
 #   1. new D-S parallel
 MMalg=1
 # Work unit size (rows of A, default 4)
-WUSIZES=4
+WUSIZES="2 4 8 16"
 
 # Pinning: -1. NONE. (default);        0.  FILL PU per socket;
 #           1.  FILL CORE per socket;  2.  JUMP socket.
