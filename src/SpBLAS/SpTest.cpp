@@ -1,5 +1,5 @@
 // Minimal sparse double matrix GEMM test.
-//   Copyright (C) 2015  Anders Gidenstam
+//   Copyright (C) 2015 - 2016  Anders Gidenstam
 
 #include <ctime>
 #include <iostream>
@@ -178,7 +178,8 @@ static void test_SpMM_DSParallelTS(std::string filename)
 
     clock_gettime(CLOCK_REALTIME, &t1);
     SpMatrix C =
-      SpMM_DSParallel_TripletStore<excess::concurrent_bag_TBBQueue>(A, A);
+      SpMM_DSParallel_TripletStore<excess::concurrent_bag_MSTLB>(A, A);
+      //SpMM_DSParallel_TripletStore<excess::concurrent_bag_TBBQueue>(A, A);
       //SpMM_DSParallel_RowStore<excess::concurrent_bag_NBLBag>(A, A);
     clock_gettime(CLOCK_REALTIME, &t2);
 
