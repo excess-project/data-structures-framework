@@ -45,7 +45,7 @@ BLASLIB = $(BLASDIR)/lib/libopenblas.a
 
 #  EXCESS MF integration
 EXCESSMFDIR = /opt/mf/0.1.4
-EXCESSMFURL = \"http://192.168.0.2:3000\"
+EXCESSMFURL = \"http://192.168.0.160:3000\"
 EXCESSMFLIB = #-Wl,-rpath=$(EXCESSMFDIR)/lib $(EXCESSMFDIR)/lib/libmf.so
 
 # General testbench configuration
