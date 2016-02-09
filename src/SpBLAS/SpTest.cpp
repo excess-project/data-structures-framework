@@ -140,7 +140,8 @@ static void test_SpMM_DSParallelRS(std::string filename)
 
     clock_gettime(CLOCK_REALTIME, &t1);
     SpMatrix C =
-      SpMM_DSParallel_RowStore<excess::concurrent_bag_TBBQueue>(A, A);
+      SpMM_DSParallel_RowStore<excess::concurrent_bag_MSTLB>(A, A);
+      //SpMM_DSParallel_RowStore<excess::concurrent_bag_TBBQueue>(A, A);
       //SpMM_DSParallel_RowStore<excess::concurrent_bag_NBLBag>(A, A);
     clock_gettime(CLOCK_REALTIME, &t2);
 
