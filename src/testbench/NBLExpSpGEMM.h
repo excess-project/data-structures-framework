@@ -58,4 +58,8 @@ protected:
   pthread_mutex_t phase2_mutex;
   pthread_cond_t  phase2_condition;
 #endif
+#ifdef SPGEMM_DEBUG
+  unsigned long* row_P1_cycles;
+  unsigned long* row_P3_cycles;
+#endif
 };

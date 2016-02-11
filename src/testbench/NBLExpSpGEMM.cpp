@@ -30,19 +30,28 @@ NBLExpSpGEMM::NBLExpSpGEMM(void)
   pthread_mutex_init(&phase2_mutex, NULL);
   pthread_cond_init(&phase2_condition, NULL);
 #endif
+#if SPGEMM_DEBUG
+  row_P1_cycles = 0;
+  row_P3_cycles = 0;
+#endif
 }
 
 NBLExpSpGEMM::~NBLExpSpGEMM(void)
 {
-  /*
-  std::cout << "Verifying correctness of the answer  ... ";
-  if (VerifyGEMM(A, B, C, Src, N)) {
-    std::cout << "OK!";
-  } else {
-    std::cout << "FAILED!";
+#ifdef SPGEMM_DEBUG
+  // Print all per-row cycle and non-zeros counts.
+  std::cout << "%% Per-row phase 1 and phase 3 cycle "
+            << "and non-zero elements counts:" << std::endl;
+  for (int r = 0; r < A.m; r++) {
+    std::cout << r << "  "
+              << row_P1_cycles[r] << "  "
+              << row_P3_cycles[r] << "  "
+              << element_count[r] << std::endl;
   }
-  std::cout << std::endl;
-  */
+
+  std::free(row_P3_cycles);
+  std::free(row_P1_cycles);
+#endif
 
   std::free(element_count);
 #ifdef SPGEMM_USE_MUTEX
@@ -144,7 +153,10 @@ void NBLExpSpGEMM::CreateScenario()
   // Create the result matrix C.
   C = SpMatrix(A.m, A.n, 0);
   element_count = (int*)calloc(A.m, sizeof(int));
-
+#ifdef SPGEMM_DEBUG
+  row_P1_cycles = (unsigned long*)calloc(A.m, sizeof(unsigned long));
+  row_P3_cycles = (unsigned long*)calloc(A.m, sizeof(unsigned long));
+#endif
   //std::cout << "Created the matrix A as " << (A.m) << "x" << (A.n)
   //          << " matrix with " << (A.nzmax) << " non-zeros." << std::endl;
   //std::cout << "Created the matrix C as " << (C.m) << "x" << (C.n)
@@ -300,7 +312,10 @@ void NBLExpSpGEMM::SpMM_DSParallel_RowStore_1P(const SpMatrix& A,
 {
   SparseAccumulator SPA(B.n);
   int ci;
-
+#ifdef SPGEMM_DEBUG
+  unsigned long cycles1, cycles2;
+  start_cycle_count(cycles1);
+#endif
   while (1) {
 
     ci = FAA32(nextci, WUSize);
@@ -339,7 +354,15 @@ void NBLExpSpGEMM::SpMM_DSParallel_RowStore_1P(const SpMatrix& A,
       }
       // Save the true #nz.
       element_count[ci] = nnz;
+#ifdef SPGEMM_DEBUG
+      stop_cycle_count(cycles2);
+      row_P1_cycles[ci] = cycles2 - cycles1;
+#endif
       Insert(Ci_bag, row, countInsert);
+#ifdef SPGEMM_DEBUG
+      // Include clearing the SPA in the parallel work.
+      start_cycle_count(cycles1);
+#endif
       SPA.Clear();
     }
   }
@@ -373,9 +396,16 @@ void NBLExpSpGEMM::SpMM_DSParallel_RowStore_3P(SpMatrix& C,
                                                long& countEmptyTryRemove)
 {
   SpMatrix::MatrixRow_t* ci;
+#ifdef SPGEMM_DEBUG
+  unsigned long cycles1, cycles2;
+#endif
   while (ci = (SpMatrix::MatrixRow_t*)TryRemove(Ci_bag,
                                                 countOkTryRemove,
                                                 countEmptyTryRemove)) {
+#ifdef SPGEMM_DEBUG
+    start_cycle_count(cycles1);
+    int row = ci->row;
+#endif
     int kbegin = C.rp[ci->row];
     int knnz   = element_count[ci->row];
 #ifdef _MEMCPY
@@ -390,6 +420,10 @@ void NBLExpSpGEMM::SpMM_DSParallel_RowStore_3P(SpMatrix& C,
     }
 #endif
     delete ci;
+#ifdef SPGEMM_DEBUG
+    stop_cycle_count(cycles2);
+    row_P3_cycles[row] = cycles2 - cycles1;
+#endif
   }
 }
 
