@@ -160,12 +160,22 @@ RUNs3 = [
 '/home/andersg/HLRS/results/SpGEMM_2016-02-05_14.22'
          ];
 
-%% Algorithms: 0 1 2 3 4 5 6 7 8 9 10 11 12; Threads: 20; Pinning: 1; MMAlg: 1; Matrix: 2; WUSize: 2 4 8 16;
+%% Algorithms: 0 1 2 3 4 5 6 7 8 9 10 11 12; Threads: 2 4 6 8 10 12 14 16 18 20; Pinning: 1; MMAlg: 1; Matrix: 2; WUSize: 2 4 8 16;
 %% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
 RUNs4 = [
+'/home/andersg/HLRS/results/SpGEMM_2016-02-05_16.17'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-05_17.40'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-05_18.37'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-05_19.34'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-05_20.31'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-05_21.28'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-05_22.26'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-05_23.23'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-06_00.20'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-06_01.17'
          ];
 
-RUNs = RUNs3;
+RUNs = RUNs4;
 
 i = 1;
 res = [];
