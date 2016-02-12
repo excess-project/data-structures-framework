@@ -314,16 +314,24 @@ void NBLExpSpGEMM::SpMM_DSParallel_RowStore_1P(const SpMatrix& A,
   int ci;
 #ifdef SPGEMM_DEBUG
   unsigned long cycles1, cycles2;
-  start_cycle_count(cycles1);
 #endif
   while (1) {
+#ifdef SPGEMM_DEBUG
+    start_cycle_count(cycles1);
+#endif
 
     ci = FAA32(nextci, WUSize);
+    int cistart = ci;
     int ciend = std::min(ci+WUSize, A.m);
 
     if (!(ci < A.m)) {
       break;
     }
+
+    SpMatrix::MatrixRow_t** wu =
+      (SpMatrix::MatrixRow_t**)std::malloc(WUSize *
+                                           sizeof(SpMatrix::MatrixRow_t*));
+    int r = 0;
 
     for (; ci < ciend; ++ci) {
       int aij  = A.rp[ci];
@@ -343,28 +351,31 @@ void NBLExpSpGEMM::SpMM_DSParallel_RowStore_1P(const SpMatrix& A,
       std::vector<int>::const_iterator cik = SPA.nzs.begin();
       std::vector<int>::const_iterator cend  = SPA.nzs.end();
       int nnz = 0;
-      SpMatrix::MatrixRow_t* row = new SpMatrix::MatrixRow_t(ci, cend - cik);
+      wu[r] = new SpMatrix::MatrixRow_t(ci, cend - cik);
       for (; cik < cend; ++cik) {
         double vcik = SPA.v[*cik];
         if (vcik != 0.0) { // FIXME: cut off very small values too?
-          row->ci[nnz] = *cik;
-          row->v[nnz]  = vcik;
+          wu[r]->ci[nnz] = *cik;
+          wu[r]->v[nnz]  = vcik;
           nnz++;
         }
       }
       // Save the true #nz.
       element_count[ci] = nnz;
-#ifdef SPGEMM_DEBUG
-      stop_cycle_count(cycles2);
-      row_P1_cycles[ci] = cycles2 - cycles1;
-#endif
-      Insert(Ci_bag, row, countInsert);
-#ifdef SPGEMM_DEBUG
-      // Include clearing the SPA in the parallel work.
-      start_cycle_count(cycles1);
-#endif
+      r++;
       SPA.Clear();
     }
+
+    // Clear any leftover space in wu.
+    for (; r < WUSize; r++) {
+      wu[r] = NULL;
+    }
+#ifdef SPGEMM_DEBUG
+    stop_cycle_count(cycles2);
+    row_P1_cycles[cistart] = cycles2 - cycles1;
+#endif
+    // Enqueue the work unit.
+    Insert(Ci_bag, wu, countInsert);
   }
 }
 
@@ -395,31 +406,36 @@ void NBLExpSpGEMM::SpMM_DSParallel_RowStore_3P(SpMatrix& C,
                                                long& countOkTryRemove,
                                                long& countEmptyTryRemove)
 {
-  SpMatrix::MatrixRow_t* ci;
+  SpMatrix::MatrixRow_t** wu;
+  SpMatrix::MatrixRow_t*  ci;
 #ifdef SPGEMM_DEBUG
   unsigned long cycles1, cycles2;
 #endif
-  while (ci = (SpMatrix::MatrixRow_t*)TryRemove(Ci_bag,
-                                                countOkTryRemove,
-                                                countEmptyTryRemove)) {
+  while (wu = (SpMatrix::MatrixRow_t**)TryRemove(Ci_bag,
+                                                 countOkTryRemove,
+                                                 countEmptyTryRemove)) {
 #ifdef SPGEMM_DEBUG
     start_cycle_count(cycles1);
-    int row = ci->row;
+    int row = wu[0]->row;
 #endif
-    int kbegin = C.rp[ci->row];
-    int knnz   = element_count[ci->row];
+    for (int r = 0; r < WUSize && wu[r]; r++) {
+      ci = wu[r];
+      int kbegin = C.rp[ci->row];
+      int knnz   = element_count[ci->row];
 #ifdef _MEMCPY
-    // It is not clear if memcpy is any faster. The bigger loop body below
-    // might allow better optimization.
-    std::memcpy(&C.ci[kbegin], ci->ci, knnz * sizeof(int));
-    std::memcpy(&C.v[kbegin], ci->v, knnz * sizeof(double));
+      // It is not clear if memcpy is any faster. The bigger loop body below
+      // might allow better optimization.
+      std::memcpy(&C.ci[kbegin], ci->ci, knnz * sizeof(int));
+      std::memcpy(&C.v[kbegin], ci->v, knnz * sizeof(double));
 #else
-    for (int k = 0; k < knnz; ++k) {
-      C.ci[kbegin + k] = ci->ci[k];
-      C.v[kbegin + k]  = ci->v[k];
-    }
+      for (int k = 0; k < knnz; ++k) {
+        C.ci[kbegin + k] = ci->ci[k];
+        C.v[kbegin + k]  = ci->v[k];
+      }
 #endif
-    delete ci;
+      delete ci;
+    }
+    std::free(wu);
 #ifdef SPGEMM_DEBUG
     stop_cycle_count(cycles2);
     row_P3_cycles[row] = cycles2 - cycles1;

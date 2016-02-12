@@ -57,8 +57,8 @@ THREADS="CASETHREADS"
 # $KILLDURATION must be sufficiently larger than $PRGDURATION or
 # the case may be terminated prematurely.
 # $SAMPLEDURATION should be less than the total case duration.
-KILLDURATION="60"
-SAMPLEDURATION="60"
+KILLDURATION="30"
+SAMPLEDURATION="30"
 #   0. Queue NOBLE Lock-Free DB          1. Queue NOBLE Lock-Free DU
 #   2. Queue NOBLE Lock-Free SB          3. Queue NOBLE Lock-Free BB
 #   4. Queue NOBLE Lock-Free BASKET      5. Queue NOBLE Lock-Free ELIM
@@ -77,7 +77,7 @@ MATRICES="2"
 #   1. new D-S parallel
 MMalg=1
 # Work unit size (rows of A, default 4)
-WUSIZES="2 4 8 16"
+WUSIZES="1 2 4 8 16"
 
 # Pinning: -1. NONE. (default);        0.  FILL PU per socket;
 #           1.  FILL CORE per socket;  2.  JUMP socket.
