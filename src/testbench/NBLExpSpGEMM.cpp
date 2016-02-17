@@ -21,6 +21,22 @@
 
 static bool VerifySpMMSquare(const SpMatrix A, const SpMatrix C);
 
+static const char* MATRIX_FILES_INIT[] = {
+  "matrices/general/R14.mtx",
+  "matrices/general/R15.mtx",
+  "matrices/general/R16.mtx",
+  "matrices/general/ASIC_320k.mtx",
+  "matrices/general/rajat31.mtx",
+  "matrices/general/sme3Dc.mtx",
+  "matrices/general/torso1.mtx",
+};
+
+static const std::vector<std::string>
+  MATRIX_FILES(MATRIX_FILES_INIT,
+               MATRIX_FILES_INIT + 
+               sizeof(MATRIX_FILES_INIT)/sizeof(MATRIX_FILES_INIT[0]));
+
+
 NBLExpSpGEMM::NBLExpSpGEMM(void)
   : WUSize(4), matrix(0), mmalg(1),
     A(SpMatrix(0, 0, 0)), C(SpMatrix(0, 0, 0)),
@@ -90,7 +106,15 @@ vector<string> NBLExpSpGEMM::GetParameterValues(int pno)
   vector<string> v;
   switch (pno) {
   case 0:
-    v.push_back(string("Matrix 0. R14; 1. R15; 2. R16 (default 0)"));
+    {
+      std::stringstream ss;
+
+      for (int i = 0; i < MATRIX_FILES.size(); i++) {
+        ss << "Matrix " << i << ". " << MATRIX_FILES[i] << "  ";
+      }
+      ss << "(default 0)";
+      v.push_back(ss.str());
+    }
     break;
   case 1:
     v.push_back(string("Matrix-matrix multiplication algorithm 0. sequential Gustavson. 1. new D-S parallel (default 1)"));
@@ -136,19 +160,7 @@ void NBLExpSpGEMM::CreateScenario()
   int i;
 
   // Load the matrix A.
-  switch (matrix) {
-  case 0:
-    A = SpMatrix::LoadFromFile("R14.mm");
-    break;
-  case 1:
-    A = SpMatrix::LoadFromFile("R15.mm");
-    break;
-  case 2:
-    A = SpMatrix::LoadFromFile("R16.mm");
-    break;
-  default:
-    A = SpMatrix::LoadFromFile("R14.mm");
-  }
+  A = SpMatrix::LoadFromFile(MATRIX_FILES[matrix]);
 
   // Create the result matrix C.
   C = SpMatrix(A.m, A.n, 0);
