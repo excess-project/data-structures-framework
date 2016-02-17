@@ -5,15 +5,15 @@ FREQs = [3];
 %ALGs = [3];
 ALGs = 0:12;
 THREADs = [1 2 4 6 8 10 12 14 16 18 20];
-%THREADs = [20];
+%THREADs = [10];
 MMALGs = [0 1];
 MATRICES = [0 1 2];
 %MATRICES = [2];
-WUSIZEs = [2 4 8 16];
+WUSIZEs = [1 2 4 8 16];
 
 plotpower=0;
 
-%% Algorithms: -; Threads: 1; Pinning: 1; MMAlg: 0; Matrix: 0 1 2; WUSize: -;
+%% Algorithms: Gustavson; Threads: 1; Pinning: 1; MMAlg: 0; Matrix: 0 1 2; WUSize: -;
 %% calloc used in phase 2.
 RUNs1 = [
 '/home/andersg/HLRS/results/SpGEMM_2016-02-04_14.14'
@@ -175,7 +175,29 @@ RUNs4 = [
 '/home/andersg/HLRS/results/SpGEMM_2016-02-06_01.17'
          ];
 
-RUNs = RUNs4;
+%% Algorithms: Gustavson; Threads: 1; Pinning: 1; MMAlg: 0; Matrix: 0 1 2; WUSize: -;
+%% malloc used in phase 2.
+RUNs5 = [
+'/home/andersg/HLRS/results/SpGEMM_2016-02-12_10.53'
+         ];
+
+%% Algorithms: 0 1 2 3 4 5 6 7 8 9 10 11 12; Threads: 2 4 6 8 10 12 14 16 18 20; Pinning: 1; MMAlg: 1; Matrix: 2; WUSize: 1 2 4 8 16;
+%% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
+%% Work units are inserted in the P/C collection rather than rows.
+RUNs6 = [
+'/home/andersg/HLRS/results/SpGEMM_2016-02-12_14.49'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-12_15.31'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-12_16.10'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-12_16.49'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-12_17.28'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-12_18.07'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-13_00.46'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-13_01.25'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-13_02.04'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-13_02.42'
+         ];
+
+RUNs = RUNs6;
 
 i = 1;
 res = [];
