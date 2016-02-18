@@ -122,6 +122,10 @@ vector<string> NBLExpProducerConsumer::GetParameters()
   return v;
 }
 
+// This is rather ugly.
+#define MAX_SINGLEOPS 20
+#define COMPAT2PMOD(pat) ((pat)-4)
+#define COMPAT2CMOD(pat) ((pat)-3-MAX_SINGLEOPS)
 
 vector<string> NBLExpProducerConsumer::GetParameterValues(int pno)
 {
@@ -132,6 +136,22 @@ vector<string> NBLExpProducerConsumer::GetParameterValues(int pno)
     v.push_back(string("1. N/2 Producer - N/2 Consumer threads (default)"));
     v.push_back(string("2.   1 Producer - N-1 Consumer threads"));
     v.push_back(string("3. N-1 Producer -   1 Consumer threads"));
+    v.push_back(string("4.   0 Producer -   N Consumer threads "
+                       "(use phased mode for non-empty)"));
+    v.push_back(string("5.   N Producer -   0 Consumer threads"));
+    for (int i=6; COMPAT2CMOD(i) <= MAX_SINGLEOPS; i++) {
+      std::stringstream ss;
+      if (1 < COMPAT2CMOD(i)) {
+        ss << i
+           << ". Enqueuers are those where do_enq = !(myId % "
+           << COMPAT2CMOD(i) << ") is true.";
+      } else if (1 < COMPAT2PMOD(i)) {
+        ss << i
+           << ". Enqueuers are those where do_enq = myId % "
+           << COMPAT2PMOD(i) << " is true.";
+      }
+      v.push_back(ss.str());
+    }
     break;
   case 1:
     v.push_back(string("#parallel work units (integer >=0, default 1)"));
@@ -140,7 +160,8 @@ vector<string> NBLExpProducerConsumer::GetParameterValues(int pno)
     v.push_back(string("#parallel work units (integer >=0, default 1)"));
     break;
   case 3:
-    v.push_back(string("#inserts per producer and active phase "
+    v.push_back(string("#inserts per producer and active phase (/ "
+                       "#pre-filled elements with pattern 4) "
                        "(default 0/disabled)"));
   }
   return v;
@@ -228,12 +249,25 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
     case 1: // N/2:N/2 Producers - Consumers
     case 2: // 1:N-1 Producer - Consumers
     case 3: // N-1:1 Producers - Consumer
-      // Code common to cases 1-3 (fixed producer/consumer assignment):
+    case 4: //  0:N  Producers - Consumers
+    case 5: //  N:0  Producers - Consumers      
+    default:
+
+      // Code common to cases 1- (fixed producer/consumer assignment):
       int do_enq;
       switch (COMM_NR) {
       case 1: do_enq = !(myId % 2); break;
       case 2: do_enq = (myId==0);   break;
       case 3: do_enq = (myId>=1);   break;
+      case 4: do_enq = 0;           break;
+      case 5: do_enq = 1;           break;
+      default:
+        if (1 < COMPAT2CMOD(COMM_NR)) {
+          do_enq = !(myId % COMPAT2CMOD(COMM_NR));
+        } else if (1 < COMPAT2PMOD(COMM_NR)) {
+          do_enq = (myId % COMPAT2PMOD(COMM_NR));          
+        }
+        break;        
       }
       for(;mainCounter;) {
         int *arg1=&operationList[myId][0].arg1;
@@ -268,24 +302,35 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
     struct timespec now;
     long dummy1=0, dummy2=0;
 
-    // Code common to cases 1-3 (fixed producer/consumer assignment):
+    // Code common to cases 1- (fixed producer/consumer assignment):
     int do_enq;
     switch (COMM_NR) {
     case 1: do_enq = !(myId % 2); leader=!myId;     break;
     case 2: do_enq = (myId==0);   leader=!myId;     break;
     case 3: do_enq = (myId>=1);   leader=(myId==1); break;
+    case 4: do_enq = 0;           leader=!myId;     break;
+    case 5: do_enq = 1;           leader=!myId;     break;
+    default:
+      if (1 < COMPAT2CMOD(COMM_NR)) {
+        do_enq = !(myId % COMPAT2CMOD(COMM_NR));
+        leader=!myId;
+      } else if (1 < COMPAT2PMOD(COMM_NR)) {
+        do_enq = (myId % COMPAT2PMOD(COMM_NR));          
+        leader=(myId==1);
+      }
+      break;        
     }
     if (leader) {
       clock_gettime(CLOCK_REALTIME, &now);
       phases[phase] = now.tv_sec + 1e-9*now.tv_nsec;
-      active=1;
+      active=(COMM_NR!=4); // The 0 producers case starts inactive.
     }
 
     for(;mainCounter;) {
       int *arg1=&operationList[myId][0].arg1;
 
-      if(do_enq) {
-        // Producer parallel work.
+      if(do_enq) { // Not used in the 0 producers case.
+        // Producer.
         producer_parallel_work();
         if (active) {
           Insert(handle,(void*)arg1, countInsert);
@@ -310,15 +355,31 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
           }
         }
       } else {
+        // Consumer.
         if (active) {
           void * result =
             TryRemove(handle,
                       countOkTryRemove, countEmptyTryRemove);
+          if (leader && !result) {
+            // The 0 producers case: the collection has been emptied.
+            active = 0;
+            ins_by_me = 0;
+            phase_shift = 1;
+          }
         } else {
-          void * result =
-            TryRemove(handle, dummy1, dummy2);
+          if (COMM_NR != 4) {
+            void * result =
+              TryRemove(handle, dummy1, dummy2);
+          } else if (leader) {
+            // The 0 producers case: pre-fill the collection for the next phase.
+            Insert(handle,(void*)arg1, dummy1);
+            ins_by_me++;
+            if (leader && (ins_by_me==max_inserted)) {
+              active = 1;
+              phase_shift = 1;
+            }
+          }
         }
-        // Consumer parallel work.
         consumer_parallel_work();
       }
       if (phase_shift) {
