@@ -66,7 +66,7 @@ SAMPLEDURATION="15"
 #   8. Queue M&S Two-lock queue          9. Stack NOBLE Lock-Free B
 #  10. Stack NOBLE Lock-Free ELIM       11. Bag NOBLE Lock-Free BB
 #  12. Pool NOBLE Lock-Free EDTREE
-#ALGORITHMS="0 1 2 3 4 5 6 7 8 9 10 11"
+#ALGORITHMS="0 1 2 3 4 5 6 7 8 9 10 11 12"
 ALGORITHMS="CASEALG"
 #ALGORITHMS="3"
 # Patterns:
@@ -74,14 +74,22 @@ ALGORITHMS="CASEALG"
 #   1. N/2 Producer - N/2 Consumer threads (default)
 #   2.   1 Producer - N-1 Consumer threads
 #   3. N-1 Producer -   1 Consumer threads
-PATTERNS="1"
+#   4.   0 Producer -   N Consumer threads (use phased mode for non-empty)
+#   5.   N Producer -   0 Consumer threads
+#   6. Enqueuers are those where do_enq = myId % 2 is true.
+#   ...
+#  24. Enqueuers are those where do_enq = myId % 20 is true.
+#  25. Enqueuers are those where do_enq = !(myId % 2) is true.
+#   ...
+#  43. Enqueuers are those where do_enq = !(myId % 20) is true.
+PATTERNS="CASEPAT"
 # Producer parallel work: 0 -
 PRODPWS="1 2 3 4 5 7 10 20 50 150 500 1000"
 # Consumer parallel work: 0 -
 CONSPWS="1 2 3 4 5 7 10 20 50 150 500 1000"
 
 # Inserts per phase to restrict collection size. Set to 0 to disable.
-PHASEINSERTS="500000"
+PHASEINSERTS="100000"
 
 # Pinning: -1. NONE. (default);        0.  FILL PU per socket;
 #           1.  FILL CORE per socket;  2.  JUMP socket.
