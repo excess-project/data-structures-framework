@@ -26,9 +26,16 @@ static const char* MATRIX_FILES_INIT[] = {
   "matrices/general/R15.mtx",
   "matrices/general/R16.mtx",
   "matrices/general/ASIC_320k.mtx",
+  "matrices/general/cage12.mtx",
+  "matrices/general/m133-b3.mtx",
+  "matrices/general/majorbasis.mtx",
+  "matrices/general/patents_main.mtx",
+  "matrices/general/poisson3Da.mtx",
   "matrices/general/rajat31.mtx",
+  "matrices/general/scircuit.mtx",
   "matrices/general/sme3Dc.mtx",
   "matrices/general/torso1.mtx",
+  "matrices/general/webbase-1M.mtx"
 };
 
 static const std::vector<std::string>

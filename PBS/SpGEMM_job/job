@@ -66,12 +66,16 @@ SAMPLEDURATION="30"
 #   8. Queue M&S Two-lock queue          9. Stack NOBLE Lock-Free B
 #  10. Stack NOBLE Lock-Free ELIM       11. Bag NOBLE Lock-Free BB
 #  12. Pool NOBLE Lock-Free EDTREE
-ALGORITHMS="0 1 2 3 4 5 6 7 8 9 10 11 12"
-#ALGORITHMS="CASEALG"
+#ALGORITHMS="0 1 2 3 4 5 6 7 8 9 10 11 12"
+ALGORITHMS="CASEALG"
 #ALGORITHMS="3"
 # Matrix
-#   0. R14; 1. R15; 2. R16 (default 0)
-MATRICES="2"
+#   0. R14;         1. R15;        2. R16;         3. ASIC_320k;
+#   4. cage12;      5. m133-b3;    6. majorbasis;  7. patents_main;
+#   8. poisson3Da;  9. rajat31;   10. scircuit;   11. sme3Dc;
+#  12.torso1;      13. webbase-1M; (default 0)
+MATRICES="2 3 4 5 6 7 8 9 10 11 12 13"
+#MATRICES="2"
 # MxM alg:
 #   0. sequential Gustavson.
 #   1. new D-S parallel
