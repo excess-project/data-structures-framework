@@ -1,5 +1,5 @@
 // Sparse accumulator for double matrix GEMM implementations
-//   Copyright (C) 2015  Anders Gidenstam
+//   Copyright (C) 2015 - 2016  Anders Gidenstam
 
 
 #include "SparseAccumulator.h"
@@ -14,7 +14,7 @@ SparseAccumulator::SparseAccumulator(int n)
   : n(n), elems(0), version(1)
 {
   assert(0 <= n);
-  v    = (double*)std::calloc(n, sizeof(double));
+  v    = (double*)std::malloc(n * sizeof(double));
   used = (int*)std::calloc(n, sizeof(int));
 }
 
@@ -39,9 +39,9 @@ SparseAccumulator::AddTo(int index, double value)
   if (used[index] != version) {
     elems++;
     used[index] = version;
-    v[index]    = 0;
+    v[index]    = 0.0;
     nzs.push_back(index);
-  }    
+  }
   v[index] += value;
 }
 

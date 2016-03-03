@@ -137,12 +137,12 @@ SpMatrix::LoadFromFile(std::string filename)
   std::sort(Mij.begin(), Mij.end(), RowMajorLessThan);
 
   // Merge duplicated entries by summation (Octave default)
-  // or keep last or keep first (possibly librsb default).
+  // or keep last (Octave 'unique') or keep first (possibly librsb default).
   std::vector<MatrixTriple_t>::iterator mij = Mij.begin();
   ++mij;
   while (mij < Mij.end()) {
     if ((mij-1)->first == mij->first) {
-      switch (2) {
+      switch (1) {
       case 0:
         // Sum.
         (mij-1)->second += mij->second;

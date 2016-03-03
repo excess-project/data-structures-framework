@@ -23,7 +23,7 @@
 #include "SpMatrix.h"
 #include "SparseAccumulator.h"
 
-#define WU 4
+#define WU 1
 
 // Internal function: 1st parallel phase.
 template < template < typename T > class concurrent_bag_t >
@@ -55,7 +55,7 @@ void SpGEMM_DSParallel_RowStore_1P
         int j    = A.ci[aij];
         int bjk  = B.rp[j];
         int bend = B.rp[j+1];
-        int vaij = A.v[aij];
+        double vaij = A.v[aij];
         for (; bjk < bend; ++bjk) {
           int k = B.ci[bjk];
           SPA.AddTo(k, vaij*B.v[bjk]);
@@ -63,8 +63,8 @@ void SpGEMM_DSParallel_RowStore_1P
       }
 
       // Save Ci* that is stored in the SPA.
-      std::vector<int>::const_iterator cik = SPA.nzs.begin();
-      std::vector<int>::const_iterator cend  = SPA.nzs.end();
+      std::vector<int>::const_iterator cik  = SPA.nzs.begin();
+      std::vector<int>::const_iterator cend = SPA.nzs.end();
       int nnz = 0;
       SpMatrix::MatrixRow_t* row = new SpMatrix::MatrixRow_t(ci, cend - cik);
       for (; cik < cend; ++cik) {
@@ -210,7 +210,7 @@ SpMatrix SpGEMM_DSParallel_TripletStore(double alpha, const SpMatrix& A,
           int j    = A.ci[aij];
           int bjk  = B.rp[j];
           int bend = B.rp[j+1];
-          int vaij = A.v[aij];
+          double vaij = A.v[aij];
           for (; bjk < bend; ++bjk) {
             int k = B.ci[bjk];
             SPA.AddTo(k, vaij*B.v[bjk]);
@@ -218,8 +218,8 @@ SpMatrix SpGEMM_DSParallel_TripletStore(double alpha, const SpMatrix& A,
         }
         
         // Save Ci* that is stored in the SPA.
-        std::vector<int>::const_iterator cik = SPA.nzs.begin();
-        std::vector<int>::const_iterator cend  = SPA.nzs.end();
+        std::vector<int>::const_iterator cik  = SPA.nzs.begin();
+        std::vector<int>::const_iterator cend = SPA.nzs.end();
         int nnz = 0;
         for (; cik < cend; ++cik) {
           double vcik = alphabeta*SPA.v[*cik];

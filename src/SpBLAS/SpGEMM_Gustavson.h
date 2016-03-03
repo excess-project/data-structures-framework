@@ -31,7 +31,7 @@ SpMatrix SpGEMM_Gustavson_RowStore(double alpha, const SpMatrix& A,
         int j    = A.ci[aij];
         int bjk  = B.rp[j];
         int bend = B.rp[j+1];
-        int vaij = A.v[aij];
+        double vaij = A.v[aij];
         for (; bjk < bend; ++bjk) {
           int k = B.ci[bjk];
           SPA.AddTo(k, vaij*B.v[bjk]);
@@ -124,7 +124,7 @@ SpMatrix SpGEMM_Gustavson_TripletStore(double alpha, const SpMatrix& A,
       int j    = A.ci[aij];
       int bjk  = B.rp[j];
       int bend = B.rp[j+1];
-      int vaij = A.v[aij];
+      double vaij = A.v[aij];
       for (; bjk < bend; ++bjk) {
         int k = B.ci[bjk];
         SPA.AddTo(k, vaij*B.v[bjk]);
