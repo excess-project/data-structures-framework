@@ -1,5 +1,5 @@
 // Sparse double matrix for sparse BLAS type of operations.
-//   Copyright (C) 2015  Anders Gidenstam
+//   Copyright (C) 2015 - 2016  Anders Gidenstam
 
 #ifndef __SPMATRIX_H
 #define __SPMATRIX_H
@@ -41,6 +41,7 @@ public:
 
   SpMatrix& operator= (const SpMatrix& other);
 
+  void SaveToFile(std::string filename);
   static SpMatrix LoadFromFile(std::string filename);
 
 private:

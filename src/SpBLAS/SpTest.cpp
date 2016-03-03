@@ -40,6 +40,7 @@ static void print_result(algorithm_t algorithm,
 
 static algorithm_t algorithm = OWN_RS;
 static std::string matrix_filename;
+static std::string result_matrix_filename;
 
 int main(int argc, char** argv)
 {
@@ -120,6 +121,9 @@ static void test_SpMM_sequential(std::string filename)
               << " sec" << std::endl;
     print_result(GUSTAVSON, A, C, ((double)(t2.tv_sec - t1.tv_sec) +
                                    1e-9 * (double)(t2.tv_nsec - t1.tv_nsec)));
+    if (!result_matrix_filename.empty()) {
+      C.SaveToFile(result_matrix_filename);
+    }
   }
 }
 
@@ -161,6 +165,9 @@ static void test_SpMM_DSParallelRS(std::string filename)
               << " sec" << std::endl;
     print_result(OWN_RS, A, C, ((double)(t2.tv_sec - t1.tv_sec) +
                                 1e-9 * (double)(t2.tv_nsec - t1.tv_nsec)));
+    if (!result_matrix_filename.empty()) {
+      C.SaveToFile(result_matrix_filename);
+    }
   }
 }
 
@@ -202,6 +209,9 @@ static void test_SpMM_DSParallelTS(std::string filename)
               << " sec" << std::endl;
     print_result(OWN_TS, A, C, ((double)(t2.tv_sec - t1.tv_sec) +
                                 1e-9 * (double)(t2.tv_nsec - t1.tv_nsec)));
+    if (!result_matrix_filename.empty()) {
+      C.SaveToFile(result_matrix_filename);
+    }
   }
 }
 
@@ -286,6 +296,9 @@ static void test_librsb(std::string filename)
                 << ((double)(t2.tv_sec - t1.tv_sec) +
                     1e-9 * (double)(t2.tv_nsec - t1.tv_nsec)) << " "
                 << m << " " << n << " " << nnz << std::endl;
+      if (!result_matrix_filename.empty()) {
+        rsb_file_mtx_save(C, result_matrix_filename.c_str());
+      }
     }
 
     if (C) {
@@ -408,6 +421,15 @@ static void process_arguments(int argc, char** argv)
         print_usage(argc, argv);
         exit(-1);
       }
+    } else if (arg.compare("-o") == 0) {
+      if (++i < argc - 1) {
+        result_matrix_filename = string(argv[i]);
+      } else {
+        std::cerr << "Error:  No filename given with '-o <file>'."
+                  << std::endl;
+        print_usage(argc, argv);
+        exit(-1);
+      }
     } else {
       if (i == argc - 1) {
         matrix_filename = string(argv[i]);
@@ -455,6 +477,8 @@ static void print_usage(int argc, char** argv)
     cout << "                      " << "4.  " << "CombBLAS."
          << endl;
 #endif
+    cout << "  -o <file>       Save the resulting matrix in <file> in MatrixMarket format."
+         << endl; 
   }
 }
 

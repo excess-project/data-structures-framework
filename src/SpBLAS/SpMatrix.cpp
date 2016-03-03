@@ -31,7 +31,8 @@ SpMatrix::SpMatrix(const SpMatrix& src)
   std::memcpy(v, src.v, src.nzmax*sizeof(double));
 }
 
-// NOTE: The entries of Mij MUST be in row-major order.
+// NOTE: The entries of Mij MUST be 0-based and in row-major order without
+//       duplicates.
 SpMatrix::SpMatrix(int rows, int columns, std::vector<MatrixTriple_t> Mij)
 {
   Init(rows, columns, Mij.size());
@@ -85,6 +86,25 @@ SpMatrix& SpMatrix::operator= (const SpMatrix& other)
   return *this;
 }
 
+void
+SpMatrix::SaveToFile(std::string filename)
+{
+  std::ofstream ofs;
+
+  ofs.open(filename.c_str());
+
+  ofs << "%%MatrixMarket matrix coordinate real general" << std::endl;
+  ofs << m << " " << n << " " << nzmax << std::endl;
+
+  for (int r = 0; r < m; r++) {
+    for (int c = rp[r]; c < rp[r+1]; c++) {
+      // NOTE: MatrixMarket triplets use 1-based indices.
+      ofs << (r+1) << " " << (ci[c]+1) << " " << v[c] << std::endl;
+    }
+  }
+  ofs.close();
+}
+
 SpMatrix
 SpMatrix::LoadFromFile(std::string filename)
 {
@@ -106,6 +126,8 @@ SpMatrix::LoadFromFile(std::string filename)
     double v;
     std::getline(ifs, line);
     std::stringstream(line) >> i >> j >> v;
+    // NOTE: The MatrixMarket files use 1-based indices while SpMatrix
+    //       uses 0-based.
     Mij.push_back(MatrixTriple_t(RowColumnPair_t(i-1,j-1), v));
   }
   ifs.close();
@@ -113,6 +135,32 @@ SpMatrix::LoadFromFile(std::string filename)
   // The order of the entries is not guaranteed!
   // Fix by sorting in row-major order.
   std::sort(Mij.begin(), Mij.end(), RowMajorLessThan);
+
+  // Merge duplicated entries by summation (Octave default)
+  // or keep last or keep first (possibly librsb default).
+  std::vector<MatrixTriple_t>::iterator mij = Mij.begin();
+  ++mij;
+  while (mij < Mij.end()) {
+    if ((mij-1)->first == mij->first) {
+      switch (2) {
+      case 0:
+        // Sum.
+        (mij-1)->second += mij->second;
+        break;
+      case 1:
+        // Keep last.
+        (mij-1)->second = mij->second;
+        break;
+      case 2:
+      default:
+        // Keep first.
+        break;
+      }
+      mij = Mij.erase(mij);
+    } else {
+      ++mij;
+    }
+  }
 
   return SpMatrix(m, n, Mij);
 }
