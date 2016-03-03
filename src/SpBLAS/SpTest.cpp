@@ -28,12 +28,15 @@ static std::string rsb_errortostr(rsb_err_t);
 static void test_CombBLAS(std::string filename);
 #endif
 
+const int no_algorithms = 4;
+typedef enum { OWN_RS=0, OWN_TS, GUSTAVSON, LIBRSB, COMBBLAS} algorithm_t;
+
 static void process_arguments(int argc, char** argv);
 static void print_usage(int argc, char** argv);
 static bool try_parse(std::string s, int& i);
-
-const int no_algorithms = 4;
-typedef enum { OWN_RS=0, OWN_TS, GUSTAVSON, LIBRSB, COMBBLAS} algorithm_t;
+static void print_result(algorithm_t algorithm,
+                         SpMatrix& A, SpMatrix& C,
+                         double duration);
 
 static algorithm_t algorithm = OWN_RS;
 static std::string matrix_filename;
@@ -44,21 +47,21 @@ int main(int argc, char** argv)
 
   switch (algorithm) {
   case OWN_RS:
-    std::cout << std::endl << "Testing own parallel RS SpGEMM." << std::endl;
+    std::cout << std::endl << "% Testing own parallel RS SpGEMM." << std::endl;
     test_SpMM_DSParallelRS(matrix_filename);
     break;
   case OWN_TS:
-    std::cout << std::endl << "Testing own parallel TS SpGEMM." << std::endl;
+    std::cout << std::endl << "% Testing own parallel TS SpGEMM." << std::endl;
     test_SpMM_DSParallelTS(matrix_filename);
     break;
   case GUSTAVSON:
-    std::cout << std::endl << "Testing sequential Gustavson SpGEMM."
+    std::cout << std::endl << "% Testing sequential Gustavson SpGEMM."
               << std::endl;
     test_SpMM_sequential(matrix_filename);
     break;
   case LIBRSB:
 #ifdef USE_LIBRSB
-    std::cout << std::endl << "Testing librsb SpGEMM." << std::endl;
+    std::cout << std::endl << "% Testing librsb SpGEMM." << std::endl;
     test_librsb(matrix_filename);
 #endif
     break;
@@ -69,9 +72,9 @@ int main(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
     if (!myrank) {
-      std::cout << std::endl << "Testing CombBLAS SpGEMM." << std::endl;
+      std::cout << std::endl << "% Testing CombBLAS SpGEMM." << std::endl;
     }
-    std::cout << "MPI: This is processor rank " << myrank
+    std::cout << "% MPI: This is processor rank " << myrank
               << " of " << nprocs << " processes." << std::endl;
 
     test_CombBLAS(matrix_filename);
@@ -86,21 +89,22 @@ static void test_SpMM_sequential(std::string filename)
 {
   struct timespec t1, t2;
 
-  std::cout << "Attempting to load the matrix '" << filename << "' into A ... ";
+  std::cout << "% Attempting to load the matrix '" << filename
+            << "' into A ... ";
   clock_gettime(CLOCK_REALTIME, &t1);
   SpMatrix A = SpMatrix::LoadFromFile(filename);
   clock_gettime(CLOCK_REALTIME, &t2);
 
   std::cout << "Ok." << std::endl;
-  std::cout << "Got " << (A.m) << "x" << (A.n) << " matrix with "
+  std::cout << "% Got " << (A.m) << "x" << (A.n) << " matrix with "
             << (A.nzmax) << " non-zeros." << std::endl;
-  std::cout << "Duration: "
+  std::cout << "% Duration: "
             << ((double)(t2.tv_sec - t1.tv_sec) +
                 1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
             << " sec" << std::endl;
 
   {
-    std::cout << "Attempting matrix matrix multiplication "
+    std::cout << "% Attempting matrix matrix multiplication "
               << "C = SpMM_Gustavson(A, A) ... ";
 
     clock_gettime(CLOCK_REALTIME, &t1);
@@ -108,12 +112,14 @@ static void test_SpMM_sequential(std::string filename)
     clock_gettime(CLOCK_REALTIME, &t2);
 
     std::cout << "Ok." << std::endl;
-    std::cout << "Result C is " << (C.m) << "x" << (C.n) << " matrix with "
+    std::cout << "% Result C is " << (C.m) << "x" << (C.n) << " matrix with "
             << (C.nzmax) << " non-zeros." << std::endl;
-    std::cout << "Duration: "
+    std::cout << "% Duration: "
               << ((double)(t2.tv_sec - t1.tv_sec) +
                   1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
               << " sec" << std::endl;
+    print_result(GUSTAVSON, A, C, ((double)(t2.tv_sec - t1.tv_sec) +
+                                   1e-9 * (double)(t2.tv_nsec - t1.tv_nsec)));
   }
 }
 
@@ -121,21 +127,22 @@ static void test_SpMM_DSParallelRS(std::string filename)
 {
   struct timespec t1, t2;
 
-  std::cout << "Attempting to load the matrix '" << filename << "' into A ... ";
+  std::cout << "% Attempting to load the matrix '" << filename
+            << "' into A ... ";
   clock_gettime(CLOCK_REALTIME, &t1);
   SpMatrix A = SpMatrix::LoadFromFile(filename);
   clock_gettime(CLOCK_REALTIME, &t2);
 
   std::cout << "Ok." << std::endl;
-  std::cout << "Got " << (A.m) << "x" << (A.n) << " matrix with "
+  std::cout << "% Got " << (A.m) << "x" << (A.n) << " matrix with "
             << (A.nzmax) << " non-zeros." << std::endl;
-  std::cout << "Duration: "
+  std::cout << "% Duration: "
             << ((double)(t2.tv_sec - t1.tv_sec) +
                 1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
             << " sec" << std::endl;
 
   {
-    std::cout << "Attempting matrix matrix multiplication "
+    std::cout << "% Attempting matrix matrix multiplication "
               << "C = SpMM_DSParallelRS(A, A) ... ";
 
     clock_gettime(CLOCK_REALTIME, &t1);
@@ -146,12 +153,14 @@ static void test_SpMM_DSParallelRS(std::string filename)
     clock_gettime(CLOCK_REALTIME, &t2);
 
     std::cout << "Ok." << std::endl;
-    std::cout << "Result C is " << (C.m) << "x" << (C.n) << " matrix with "
+    std::cout << "% Result C is " << (C.m) << "x" << (C.n) << " matrix with "
               << (C.nzmax) << " non-zeros." << std::endl;
-    std::cout << "Duration: "
+    std::cout << "% Duration: "
               << ((double)(t2.tv_sec - t1.tv_sec) +
                   1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
               << " sec" << std::endl;
+    print_result(OWN_RS, A, C, ((double)(t2.tv_sec - t1.tv_sec) +
+                                1e-9 * (double)(t2.tv_nsec - t1.tv_nsec)));
   }
 }
 
@@ -159,21 +168,22 @@ static void test_SpMM_DSParallelTS(std::string filename)
 {
   struct timespec t1, t2;
 
-  std::cout << "Attempting to load the matrix '" << filename << "' into A ... ";
+  std::cout << "% Attempting to load the matrix '" << filename
+            << "' into A ... ";
   clock_gettime(CLOCK_REALTIME, &t1);
   SpMatrix A = SpMatrix::LoadFromFile(filename);
   clock_gettime(CLOCK_REALTIME, &t2);
 
   std::cout << "Ok." << std::endl;
-  std::cout << "Got " << (A.m) << "x" << (A.n) << " matrix with "
+  std::cout << "% Got " << (A.m) << "x" << (A.n) << " matrix with "
             << (A.nzmax) << " non-zeros." << std::endl;
-  std::cout << "Duration: "
+  std::cout << "% Duration: "
             << ((double)(t2.tv_sec - t1.tv_sec) +
                 1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
             << " sec" << std::endl;
 
   {
-    std::cout << "Attempting matrix matrix multiplication "
+    std::cout << "% Attempting matrix matrix multiplication "
               << "C = SpMM_DSParallelTS(A, A) ... ";
 
     clock_gettime(CLOCK_REALTIME, &t1);
@@ -184,12 +194,14 @@ static void test_SpMM_DSParallelTS(std::string filename)
     clock_gettime(CLOCK_REALTIME, &t2);
 
     std::cout << "Ok." << std::endl;
-    std::cout << "Result C is " << (C.m) << "x" << (C.n) << " matrix with "
+    std::cout << "% Result C is " << (C.m) << "x" << (C.n) << " matrix with "
               << (C.nzmax) << " non-zeros." << std::endl;
-    std::cout << "Duration: "
+    std::cout << "% Duration: "
               << ((double)(t2.tv_sec - t1.tv_sec) +
                   1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
               << " sec" << std::endl;
+    print_result(OWN_TS, A, C, ((double)(t2.tv_sec - t1.tv_sec) +
+                                1e-9 * (double)(t2.tv_nsec - t1.tv_nsec)));
   }
 }
 
@@ -205,9 +217,10 @@ static void test_librsb(std::string filename)
               << std::endl;
     return;
   }
-  std::cout << "Correctly initialized librsb." << std::endl;
+  std::cout << "% Correctly initialized librsb." << std::endl;
 
-  std::cout << "Attempting to load the matrix '" << filename << "' into A ... ";
+  std::cout << "% Attempting to load the matrix '" << filename
+            << "' into A ... ";
   clock_gettime(CLOCK_REALTIME, &t1);
   struct rsb_mtx_t* A =
     rsb_file_mtx_load(filename.c_str(),
@@ -220,22 +233,21 @@ static void test_librsb(std::string filename)
               << rsb_errortostr(errval) << "'"
               << std::endl;
     return;
-  } else {
-    std::cout << "Ok." << std::endl;
-    int m, n, nnz;
-    rsb_mtx_get_info(A, RSB_MIF_MATRIX_ROWS__TO__RSB_COO_INDEX_T, &m);
-    rsb_mtx_get_info(A, RSB_MIF_MATRIX_COLS__TO__RSB_COO_INDEX_T, &n);
-    rsb_mtx_get_info(A, RSB_MIF_MATRIX_NNZ__TO__RSB_NNZ_INDEX_T, &nnz);
-    std::cout << "Got " << m << "x" << n << " matrix with "
-              << nnz << " non-zeros." << std::endl;
-    std::cout << "Duration: "
-              << ((double)(t2.tv_sec - t1.tv_sec) +
-                  1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
-              << " sec" << std::endl;
   }
+  std::cout << "Ok." << std::endl;
+  int Am, An, Annz;
+  rsb_mtx_get_info(A, RSB_MIF_MATRIX_ROWS__TO__RSB_COO_INDEX_T, &Am);
+  rsb_mtx_get_info(A, RSB_MIF_MATRIX_COLS__TO__RSB_COO_INDEX_T, &An);
+  rsb_mtx_get_info(A, RSB_MIF_MATRIX_NNZ__TO__RSB_NNZ_INDEX_T, &Annz);
+  std::cout << "% Got " << Am << "x" << An << " matrix with "
+            << Annz << " non-zeros." << std::endl;
+  std::cout << "% Duration: "
+            << ((double)(t2.tv_sec - t1.tv_sec) +
+                1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
+            << " sec" << std::endl;
 
   {
-    std::cout << "Attempting matrix matrix multiplication "
+    std::cout << "% Attempting matrix matrix multiplication "
               << "C = rsb_spmsp(A, A) ... ";
 
     clock_gettime(CLOCK_REALTIME, &t1);
@@ -262,12 +274,18 @@ static void test_librsb(std::string filename)
       rsb_mtx_get_info(C, RSB_MIF_MATRIX_COLS__TO__RSB_COO_INDEX_T, &n);
       rsb_mtx_get_info(C, RSB_MIF_MATRIX_NNZ__TO__RSB_NNZ_INDEX_T, &nnz);
 
-      std::cout << "Result C is " << m << "x" << n << " matrix with "
+      std::cout << "% Result C is " << m << "x" << n << " matrix with "
                 << nnz << " non-zeros." << std::endl;
-      std::cout << "Duration: "
+      std::cout << "% Duration: "
                 << ((double)(t2.tv_sec - t1.tv_sec) +
                     1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
                 << " sec" << std::endl;
+      // Condensed result without initial octave comment marker.
+      std::cout << LIBRSB << " "
+                << Am << " " << An << " " << Annz << " "
+                << ((double)(t2.tv_sec - t1.tv_sec) +
+                    1e-9 * (double)(t2.tv_nsec - t1.tv_nsec)) << " "
+                << m << " " << n << " " << nnz << std::endl;
     }
 
     if (C) {
@@ -311,7 +329,7 @@ static void test_CombBLAS(std::string filename)
   MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
 
   if (!myrank) {
-    std::cout << "Attempting to load the matrix '" << filename
+    std::cout << "% Attempting to load the matrix '" << filename
               << "' into A ... ";
   }
   t1 = MPI_Wtime();
@@ -324,7 +342,7 @@ static void test_CombBLAS(std::string filename)
   }
   A.PrintInfo();
   if (!myrank) {
-    std::cout << "Duration: "
+    std::cout << "% Duration: "
               << (t2 - t1)
               << " sec" << std::endl;
   }
@@ -336,7 +354,7 @@ static void test_CombBLAS(std::string filename)
   {
     MPI_Barrier(MPI_COMM_WORLD);
     if (!myrank) {
-      std::cout << "Attempting matrix-matrix multiplication "
+      std::cout << "% Attempting matrix-matrix multiplication "
                 << "C = (Mult_AnXBn_DoubleBuffA, A) ... ";
     }
 
@@ -352,9 +370,14 @@ static void test_CombBLAS(std::string filename)
     }
     C.PrintInfo();
     if (!myrank) {
-      std::cout << "Duration: "
+      std::cout << "% Duration: "
                 << (t2 - t1)
                 << " sec" << std::endl;
+      // Condensed result without initial octave comment marker.
+      std::cout << COMBBLAS << " "
+                << -1 << " " << -1 << " " << -1 << " "
+                << (t2 - t1) << " "
+                << -1 << " " << -1 << " " << -1 << std::endl;
     }
   }
 }
@@ -406,7 +429,7 @@ static void print_usage(int argc, char** argv)
 
   cout << endl;
   cout << "EXCESS sparse matrix multiplication experiment." << endl;
-  //cout << "  Copyright (C) 2015  Anders Gidenstam" << endl;
+  //cout << "  Copyright (C) 2015 - 2016  Anders Gidenstam" << endl;
 
   cout << endl;
   cout << "Usage: " << argv[0] << " [options] <matrix file>" << endl;
@@ -441,4 +464,15 @@ static void print_usage(int argc, char** argv)
   char c;
   ss >> i;
   return !(ss.fail() || ss.get(c));
+}
+
+static void print_result(algorithm_t algorithm,
+                         SpMatrix& A, SpMatrix& C,
+                         double duration)
+{
+  // Condensed result without initial octave comment marker.
+  std::cout << algorithm << " "
+            << A.m << " " << A.n << " " << A.nzmax << " "
+            << duration << " "
+            << C.m << " " << C.n << " " << C.nzmax << std::endl;
 }
