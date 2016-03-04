@@ -41,7 +41,13 @@ function [alg threads pinning matrix mmalg wus durations operations RAPL_powers 
   %%   RAPL
 
   %% Full interval sample 1% to 99% of duration.
-  RAPL_t_avg(lookup(t_rapl, res(6) + 0.01*duration)+1 : lookup(t_rapl, res(6) + 0.99*duration)) = 1;
+  if duration > 0.2
+    RAPL_t_avg(lookup(t_rapl, res(6) + 0.01*duration)+1 : lookup(t_rapl, res(6) + 0.99*duration)) = 1;
+  else
+    %% Include at least two RAPL samples.
+    RAPL_t_avg(lookup(t_rapl, res(6)) : lookup(t_rapl, res(6))+1) = 1;
+  endif
+
   RAPL_t_avg = logical(RAPL_t_avg);
 
   if (res(14) > 0)
@@ -51,9 +57,11 @@ function [alg threads pinning matrix mmalg wus durations operations RAPL_powers 
     RAPL_t_avg_p1 = logical(RAPL_t_avg_p1);
     %% Phase 2 may be very short.
     if phase2 < 0.2
+      %% Ignore phase 2 power.
+
       %%   Include one point from the end of phase 1 and one from the beginning
       %%   of phase 3.
-      RAPL_t_avg_p2(lookup(t_rapl, res(6)+phase1) : lookup(t_rapl, res(6)+phase1+phase2)+1) = 1;
+      %RAPL_t_avg_p2(lookup(t_rapl, res(6)+phase1) : lookup(t_rapl, res(6)+phase1+phase2)+1) = 1;
     else
       RAPL_t_avg_p2(lookup(t_rapl, res(6)+phase1)+1 : lookup(t_rapl, res(6)+phase1+phase2)) = 1;
     endif
@@ -71,17 +79,39 @@ function [alg threads pinning matrix mmalg wus durations operations RAPL_powers 
 
   if (res(14) > 0)
     %% Algorithm phases were timed.
-    RAPL_powers_mean_p1 = mean(RAPL_all(RAPL_t_avg_p1,:))
-    RAPL_powers_std_p1 = std(RAPL_all(RAPL_t_avg_p1,:));
-    RAPL_powers_biased_coef_of_var_p1 = RAPL_powers_std_p1 ./ RAPL_powers_mean_p1
+    if phase1 > 0.2
+      RAPL_powers_mean_p1 = mean(RAPL_all(RAPL_t_avg_p1,:))
+      RAPL_powers_std_p1 = std(RAPL_all(RAPL_t_avg_p1,:));
+      RAPL_powers_biased_coef_of_var_p1 = RAPL_powers_std_p1 ./ RAPL_powers_mean_p1
+    else
+      %% Ignore phase 1 power.
+      RAPL_powers_mean_p1 = RAPL_powers_mean;
+      RAPL_powers_std_p1  = RAPL_powers_std;
+      RAPL_powers_biased_coef_of_var_p1 = RAPL_powers_biased_coef_of_var;
+    endif
 
-    RAPL_powers_mean_p2 = mean(RAPL_all(RAPL_t_avg_p2,:))
-    RAPL_powers_std_p2 = std(RAPL_all(RAPL_t_avg_p2,:));
-    RAPL_powers_biased_coef_of_var_p2 = RAPL_powers_std_p2 ./ RAPL_powers_mean_p2
+    if phase2 > 0.2
+      RAPL_powers_mean_p2 = mean(RAPL_all(RAPL_t_avg_p2,:))
+      RAPL_powers_std_p2  = std(RAPL_all(RAPL_t_avg_p2,:));
+      RAPL_powers_biased_coef_of_var_p2 = RAPL_powers_std_p2 ./ RAPL_powers_mean_p2
+    else
+      %% Ignore phase 2 power.
+      RAPL_powers_mean_p2 = RAPL_powers_mean;
+      RAPL_powers_std_p2  = RAPL_powers_std;
+      RAPL_powers_biased_coef_of_var_p2 = RAPL_powers_biased_coef_of_var;
+    endif
 
-    RAPL_powers_mean_p3 = mean(RAPL_all(RAPL_t_avg_p3,:))
-    RAPL_powers_std_p3 = std(RAPL_all(RAPL_t_avg_p3,:));
-    RAPL_powers_biased_coef_of_var_p3 = RAPL_powers_std_p3 ./ RAPL_powers_mean_p3
+    if phase3 > 0.2
+      RAPL_powers_mean_p3 = mean(RAPL_all(RAPL_t_avg_p3,:))
+      RAPL_powers_std_p3 = std(RAPL_all(RAPL_t_avg_p3,:));
+      RAPL_powers_biased_coef_of_var_p3 = RAPL_powers_std_p3 ./ RAPL_powers_mean_p3
+    else
+      %% Ignore phase 3 power.
+      RAPL_powers_mean_p3 = RAPL_powers_mean;
+      RAPL_powers_std_p3  = RAPL_powers_std;
+      RAPL_powers_biased_coef_of_var_p3 = RAPL_powers_biased_coef_of_var;
+    endif
+
   else
     RAPL_powers_mean_p1 = RAPL_powers_mean;
     RAPL_powers_mean_p2 = RAPL_powers_mean;

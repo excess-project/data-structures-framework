@@ -7,8 +7,10 @@ ALGs = 0:12;
 THREADs = [1 2 4 6 8 10 12 14 16 18 20];
 %THREADs = [10];
 MMALGs = [0 1];
-MATRICES = [0 1 2];
-%MATRICES = [2];
+MATRICEs = 0:13;
+%MATRICEs = [5];
+%MATRICEs = [0 1 2];
+%MATRICEs = [2];
 WUSIZEs = [1 2 4 8 16];
 
 plotpower=0;
@@ -197,11 +199,103 @@ RUNs6 = [
 '/home/andersg/HLRS/results/SpGEMM_2016-02-13_02.42'
          ];
 
-RUNs = RUNs6;
+%% Algorithms: 0; Threads: 1; Pinning: 1; MMAlg: 1; Matrix: 0 1 2 3 4 5 6; WUSize: 1 2 4 8 16;
+%% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
+%% Work units are inserted in the P/C collection rather than rows.
+%% DEBUG is defined to output parallel work in cycles.
+%'/home/andersg/HLRS/results/SpGEMM_2016-02-17_14.16/*'
+
+%% Algorithms: Gustavson; Threads: 1; Pinning: 1; MMAlg: 0; Matrix: 0 1 2 3 4 5 6; WUSize: -;
+%% malloc used in phase 2.
+RUNs7 = [
+'/home/andersg/HLRS/results/SpGEMM_2016-02-17_15.02'
+         ];
+
+%% Algorithms: 3; Threads: 1; Pinning: 1; MMAlg: 1; Matrix: 0 1 2 3 4 5 6; WUSize: 1 2 4 8 16;
+%% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
+%% Work units are inserted in the P/C collection rather than rows.
+%% DEBUG is defined to output parallel work in cycles.
+%'/home/andersg/HLRS/results/SpGEMM_2016-02-17_15.19/*'
+
+%% Algorithms: 3; Threads: 1; Pinning: 1; MMAlg: 1; Matrix: 2 3 4 5 6 7 8 9 10 11 12 13; WUSize: 1 2 4 8 16;
+%% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
+%% Work units are inserted in the P/C collection rather than rows.
+%% DEBUG is defined to output parallel work in cycles.
+%% NOTE: The matrices 4- have been renumbered!
+%'/home/andersg/HLRS/results/SpGEMM_2016-02-25_13.50/*'
+%'/home/andersg/HLRS/results/SpGEMM_2016-02-25_14.50/*'
+
+%% Algorithms: 0-12; Threads: 10; Pinning: 1; MMAlg: 1;
+%% Matrix: 2 3 4 5 6 7 8 9 10 11 12 13; WUSize: 1 2 4 8 16;
+%% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
+%% Work units are inserted in the P/C collection rather than rows.
+%% NOTE: A bug in my SpGEMM implementations forced intermediate results to int. 
+RUNs8 = [
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_16.48'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_17.24'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_18.00'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_18.36'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_19.11'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_19.47'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_20.23'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_20.59'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_21.35'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_22.10'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_22.46'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_23.22'
+'/home/andersg/HLRS/results/SpGEMM_2016-02-25_23.58'
+         ];
+
+%% Algorithms: 0-12; Threads: 10 20; Pinning: 1; MMAlg: 1;
+%% Matrix: 2 3 4 5 6 7 8 9 10 11 12 13; WUSize: 1 2 4 8 16;
+%% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
+%% Work units are inserted in the P/C collection rather than rows.
+RUNs9 = [
+'/home/andersg/HLRS/results/SpGEMM_2016-03-03_22.25'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-03_23.00'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-03_23.36'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_00.12'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_00.48'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_01.24'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_01.59'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_02.35'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_03.11'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_03.47'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_04.22'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_04.58'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_05.34'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_06.10'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_06.46'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_07.21'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_07.57'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_08.33'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_09.09'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_09.45'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_10.20'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_10.56'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_11.32'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_12.08'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_12.44'
+'/home/andersg/HLRS/results/SpGEMM_2016-03-04_13.19'
+         ];
+
+%% Algorithms: 3; Threads: 1; Pinning: 1; MMAlg: 1; Matrix: 2 3 4 5 6 7 8 9 10 11 12 13; WUSize: 1 2 4 8 16;
+%% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
+%% Work units are inserted in the P/C collection rather than rows.
+%% DEBUG is defined to output parallel work in cycles.
+%'/home/andersg/HLRS/results/SpGEMM_2016-03-04_15.23/*'
+%'/home/andersg/HLRS/results/SpGEMM_2016-03-04_16.24/*'
+
+%% Algorithms: 3; Threads: 1; Pinning: 1; MMAlg: 1; Matrix: 2 3 4 5 6 7 8 9 10 11 12 13; WUSize: 1;
+%% malloc used during phase 1 and phase 2; busy waiting used for phase 2.
+%% Work units are inserted in the P/C collection rather than rows.
+%% DEBUG is defined to output parallel work in cycles.
+
+RUNs = RUNs9;
 
 i = 1;
 res = [];
-for d = 1:size(RUNs)(1)
+for d = 1:rows(RUNs)
   base = RUNs(d,:);
   basename = [base '/SpGEMM_result_' base(length(base) - 15 : length(base)) '-'];
 
@@ -210,7 +304,7 @@ for d = 1:size(RUNs)(1)
 
       algname = sprintf("ca%d", a);
 
-      for matrix = MATRICES
+      for matrix = MATRICEs
         for wu = WUSIZEs
           for mmalg = MMALGs
             for t = THREADs
@@ -218,7 +312,7 @@ for d = 1:size(RUNs)(1)
 
               try
                 resfile = sprintf("%sOUT-%s-%s.txt", basename, algname, casename);
-                                %printf("Trying '%s' ... ", outfile);
+                %printf("Trying '%s' ... ", outfile);
 
                 [info, err] = stat(resfile);
                 if (err == 0)
