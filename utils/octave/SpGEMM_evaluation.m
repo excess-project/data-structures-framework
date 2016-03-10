@@ -58,19 +58,10 @@ res = load(resfile);
 %%  71-74: BCoV_PKG_S1_p3    BCoV_PKG_S2_p3    BCoV_CPU_S1_p3 BCoV_CPU_S2_p3
 %%  75-78: BCoV_Uncore_S1_p3 BCoV_Uncore_S2_p3 BCoV_Mem_S1_p3 BCoV_Mem_S2_p3
 
-%% MMAlg 1 parallel work measurements.
-%pwres_file = 'fe-R16xR16_pr-pw-1.dat';
-%pwres_file = 'CTHEXCESS-R16xR16_pr-pw.dat';
-%pwres_file = 'CTHEXCESS-R16xR16_pr-pw-2.dat';
-pwres_file = 'CTHEXCESS-R16xR16_pr-pw-wu1.dat';
-
-%% Layout of the parallel work measurements file:
-%%   1-4:  row#  cycles_phase1  cycles_phase3  non-zero_count
-pwres = load(pwres_file);
-
 %% Extract the domain ranges for the experiment.
 S_range_freq    = unique(res(:,1))';
-S_range_impl    = unique(res(:,2))';
+%S_range_impl    = unique(res(:,2))'; %% All
+S_range_impl    = 0:8; %% Just queues.
 S_range_threads = unique(res(:,3))';
 S_range_pinning = unique(res(:,4))';
 S_range_matrix  = unique(res(:,5))';
@@ -81,7 +72,9 @@ S_range_wus     = unique(res(:,7))';
 %% Select cases
 threads=10;
 impls = S_range_impl;
-matrix=12;
+matrix= 12;
+
+plot_phase_durations = 1;
 
 %% Compute producer/consumer collection throughput for the selected cases.
 res_t = res(res(:,3)==threads,:);
@@ -132,6 +125,37 @@ xlabel("Matrix rows per work package (rows)");
 ylabel("Running time (sec)");
 hold off;
 
+if plot_phase_durations
+  %% Plot SpGEMM phase time against work unit size for all implementations.
+  figure(2);
+  for impl=impls
+    res_tmi = res_tm(res_tm(:,2)==impl,:);
+    time_tmi = res_tmi(:,9);
+    plot(res_tmi(:,7), time_tmi,
+         [color(impl+1) symb(2*impl+1) "-;Impl. " num2str(impl) ";"]
+         );
+    hold on;
+  endfor
+  title(["SpGEMM phase 1 running time (matrix " num2str(matrix) ", " num2str(threads) " threads)"]);
+  xlabel("Matrix rows per work package (rows)");
+  ylabel("Running time (sec)");
+  hold off;
+
+  figure(3);
+  for impl=impls
+    res_tmi = res_tm(res_tm(:,2)==impl,:);
+    time_tmi = res_tmi(:,11);
+    plot(res_tmi(:,7), time_tmi,
+         [color(impl+1) symb(2*impl+1) "-;Impl. " num2str(impl) ";"]
+         );
+    hold on;
+  endfor
+  title(["SpGEMM phase 3 running time (matrix " num2str(matrix) ", " num2str(threads) " threads)"]);
+  xlabel("Matrix rows per work package (rows)");
+  ylabel("Running time (sec)");
+  hold off;
+
+endif
 endif
 
 
@@ -223,7 +247,7 @@ endfor
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Plot throughput against work unit size for all implementations.
-figure(2);
+figure(4);
 color = ['r', 'g', 'b', 'm', 'k'];
 color  = [color color color color];
 symb  = ['+', 'x', 'o', '*', 's', 'd', '^', 'v', '<', '>', 'p', 'h'];
@@ -251,24 +275,59 @@ range_wus = [1 2 4 8 16]';
 
 pw_large = 1e8; %% Bougus guess.
 
-%% Hack!! Estimate average pw from a sequential sptest run for this matrix.
-res_sptest = load('/home/andersg/HLRS/results/SpTest_2016-03-03_17.25.res');
-res_gustavson = res_sptest(res_sptest(:,4)==2,:);
-res_gustavson_m = res_gustavson(res_gustavson(:,3)==matrix,:);
+if 0
+  %% Hack!! Estimate average pw from a sequential sptest run for this matrix.
+  res_sptest = load('/home/andersg/HLRS/results/SpTest_2016-03-03_17.25.res');
+  res_gustavson = res_sptest(res_sptest(:,4)==2,:);
+  res_gustavson_m = res_gustavson(res_gustavson(:,3)==matrix,:);
 
-matrix_rows =  res_gustavson_m(1,9);
+  matrix_rows =  res_gustavson_m(1,9);
 
-pw = res_gustavson_m(1,1).*1e9 .* res_gustavson_m(1,8) ./ res_gustavson_m(1,9);
-%% Mega hack!!! Split pw between phase 1 and phase 3.
-pw_e = 3/4 .* pw
-pw_d = 1/4 .* pw
+  pw = res_gustavson_m(1,1).*1e9 .* res_gustavson_m(1,8) ./ res_gustavson_m(1,9);
+  %% Mega hack!!! Split pw between phase 1 and phase 3.
+  pw_e = 3/4 .* pw
+  pw_d = 1/4 .* pw
+else
+  %% Use per-matrix recorded parallel work cycles.
+  pw_basename = '/home/andersg/HLRS/results/SpGEMM_2016-03-04_17.24/SpGEMM_result_2016-03-04_17.24-';
+  %% Format:
+  %%   1-4:  row#  cycles_phase1  cycles_phase3  non-zero_count
+  pwres = SpGEMM_load_pw_distribution(pw_basename, matrix);
 
-%pw_e = 1.*mean(pwres(:,2));
-%pw_d = 1.*mean(pwres(:,3));
-%pw_e = 445;
-%pw_d = 330;
+  matrix_rows = rows(pwres);
 
-m_res = zeros(0, 4);
+  if 1
+    %% Simple mean. Tuned for m12. Behaves way worse for others.
+    pw_e = 0.95.*mean(pwres(:,2));
+    pw_d = 6.*mean(pwres(:,3));
+    %pw_e = 445;
+    %pw_d = 330;
+
+    %% Matrix 12. From histogram.
+    %pw_e = 2000;
+    %pw_d = 400;
+
+    pw_d_bin_sizes = [pw_d];
+    pw_d_bin_counts = [rows(pwres)];
+
+    pw_e_bin_sizes = [pw_e];
+    pw_e_bin_counts = [rows(pwres)];
+  else
+    pw_d_bin_sizes  = [0:1000:10000]; 
+    pw_d_bin_counts = histc(pwres(:,2), pw_d_bin_sizes);
+    pw_d_bin_sizes  = 0.5.*(pw_d_bin_sizes(1:columns(pw_d_bin_sizes)-1) +
+                            pw_d_bin_sizes(2:columns(pw_d_bin_sizes)));
+    pw_d_bin_counts(rows(pw_d_bin_counts)-1) += rows(pwres) - sum(pw_d_bin_counts);
+
+    pw_e_bin_sizes  = [0:5000:100000]; 
+    pw_e_bin_counts = histc(pwres(:,2), pw_e_bin_sizes);
+    pw_e_bin_sizes  = 0.5.*(pw_e_bin_sizes(1:columns(pw_e_bin_sizes)-1) +
+                            pw_e_bin_sizes(2:columns(pw_e_bin_sizes)));
+    pw_e_bin_counts(rows(pw_e_bin_counts)-1) += rows(pwres) - sum(pw_e_bin_counts);
+  endif
+endif
+
+m_res = zeros(0, 8);
 for impl=impls
   idx_impl = lookup(E_range_impl, impl);
   res_tmi = res_tm(res_tm(:,2)==impl,:);
@@ -279,28 +338,75 @@ for impl=impls
       mtp_e = zeros(rows(range_wus),1);
       mtp_d = zeros(rows(range_wus),1);
       predicted_time = zeros(rows(range_wus),1);
+      predicted_time_p1 = zeros(rows(range_wus),1);
+      predicted_time_p3 = zeros(rows(range_wus),1);
       for idx_wu = 1:rows(range_wus)
         wu = range_wus(idx_wu);
-        [Tp_d Tp_e Tp_dp Tp_dm Tp_ep Tp_em] = EXCESS_IPDPS15_queue_model_throughput(pw_large, pw_e.*wu, this_model)
-        mtp_e(idx_wu) = Tp_e;
-%        mtp_e(idx_wu) = Tp_e./(mean(pwres(:,2))/pw_e);
 
-        [Tp_d Tp_e Tp_dp Tp_dm Tp_ep Tp_em] = EXCESS_IPDPS15_queue_model_throughput(pw_d.*wu, pw_d.*wu./2, this_model)
-        mtp_d(idx_wu) = Tp_d;
-%        mtp_d(idx_wu) = Tp_dp./(mean(pwres(:,3))/pw_d);
+        for idx_bin = 1:columns(pw_e_bin_sizes)
+          pw_e = pw_e_bin_sizes(idx_bin);
 
-        %% Predict the total time based on the throughputs. phase 2 is ignored.
-        predicted_time(idx_wu) = matrix_rows./(wu*mtp_e(idx_wu)) + matrix_rows./(wu*mtp_d(idx_wu));
+          %% No consumers in this phase in the real algorithm.
+          %% -> Make consumer pw_d large to keep their influence low. 
+          [Tp_d Tp_e Tp_dp Tp_dm Tp_ep Tp_em] = EXCESS_IPDPS15_queue_model_throughput(pw_large, pw_e.*wu, this_model)
+          mtp_e(idx_wu) = Tp_e;
+%         mtp_e(idx_wu) = Tp_e./(mean(pwres(:,2))/pw_e);
+
+          %% Predict the time based on the throughputs. phase 2 is ignored.
+          predicted_time_p1(idx_wu) += pw_e_bin_counts(idx_bin)./(wu*mtp_e(idx_wu));
+        endfor
+
+        for idx_bin = 1:columns(pw_d_bin_sizes)
+          pw_d = pw_d_bin_sizes(idx_bin);
+
+          %% No producers in this phase in the real algorithm.
+          %% -> The collection is never empty, a somewhat smaller pw_e should
+          %%    keep it that way.
+          [Tp_d Tp_e Tp_dp Tp_dm Tp_ep Tp_em] = EXCESS_IPDPS15_queue_model_throughput(pw_d.*wu, 0.8*pw_d.*wu, this_model)
+          mtp_d(idx_wu) = Tp_dp;
+%         mtp_d(idx_wu) = Tp_dp./(mean(pwres(:,3))/pw_d);
+
+          %% Predict the time based on the throughputs. phase 2 is ignored.
+          predicted_time_p3(idx_wu) += pw_d_bin_counts(idx_bin)./(wu*mtp_d(idx_wu));
+        endfor
+
+        predicted_time(idx_wu) = predicted_time_p1(idx_wu) + predicted_time_p3(idx_wu);
 
         %% Find the real time for this case.
         real_time = res_tmi(res_tmi(:,7)==wu, 8);
+        real_time_p1 = res_tmi(res_tmi(:,7)==wu, 9);
+        real_time_p3 = res_tmi(res_tmi(:,7)==wu, 11);
         %% Store this prediction.
-        m_res = [m_res; [impl wu predicted_time(idx_wu) real_time]];
+        m_res = [m_res; [impl wu predicted_time(idx_wu) real_time predicted_time_p1(idx_wu) real_time_p1 predicted_time_p3(idx_wu) real_time_p3]];
       endfor
 
       if 1
+        % Plot predicted total time.
+        figure(1);
+        hold on;
+        plot(range_wus, predicted_time,
+             [color(impl+1) "-"]
+             );
+        hold off;
+        if plot_phase_durations
+          % Plot predicted phase times
+          figure(2);
+          hold on;
+          plot(range_wus, predicted_time_p1,
+               [color(impl+1) "-"]
+               );
+          hold off;
+          figure(3);
+          hold on;
+          plot(range_wus, predicted_time_p3,
+               [color(impl+1) "-"]
+               );
+          hold off;
+        endif
+      endif;
+      if 1
         % Plot throughput lines.
-        figure(2);
+        figure(4);
         hold on;
         plot(range_wus, mtp_e,
 %             [color(impl+1) symb(2*impl+1) "-"],
@@ -311,15 +417,6 @@ for impl=impls
              );
         hold off;
       endif
-      if 1
-        % Plot predicted total time.
-        figure(1);
-        hold on;
-        plot(range_wus, predicted_time,
-             [color(impl+1) "-"]
-             );
-        hold off;
-      endif;
     endif
   endif
 endfor
