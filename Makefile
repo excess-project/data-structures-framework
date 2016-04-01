@@ -44,9 +44,9 @@ BLASLIB = $(BLASDIR)/lib/libopenblas.a
 #COMBBLASLIB = -L$(COMBBLASDIR)/lib -lCommGridlib -lMPITypelib
 
 #  EXCESS MF integration
-EXCESSMFDIR = /opt/mf/0.1.4
-EXCESSMFURL = \"http://192.168.0.160:3000\"
-EXCESSMFLIB = #-Wl,-rpath=$(EXCESSMFDIR)/lib $(EXCESSMFDIR)/lib/libmf.so
+#EXCESSMFDIR = /opt/mf/stable/16.2
+#EXCESSMFURL = \"http://192.168.0.160:3030\"
+#EXCESSMFLIB = -Wl,-rpath=$(EXCESSMFDIR)/lib $(EXCESSMFDIR)/lib/libmf.so
 
 # General testbench configuration
 TGFLAGS += -DUSE_NOBLE
@@ -59,6 +59,8 @@ TGFLAGS += -DUSE_BLAS
 #TGFLAGS += -DUSE_COMBBLAS
 TGFLAGS += -DNOSAVEMANDELBROT
 #TGFLAGS += -DUSE_EXCESS_MF
+#TGFLAGS += -DSPGEMM_USE_MUTEX
+#TGFLAGS += -DSPGEMM_DEBUG
 
 # Compiler settings
 CFLAGS = -DLINUX64_X86 -O2 -fpermissive -march=native -DNDEBUG

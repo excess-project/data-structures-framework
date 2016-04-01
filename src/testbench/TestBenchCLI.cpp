@@ -90,14 +90,29 @@ int main(int argc, char** argv)
 
 #ifdef USE_EXCESS_MF
   if (useMF) {
-    // Prepare the MF API.
-    mf_api_initialize(EXCESSMFURL);
+    // Prepare the ATOM MF API.
+    //   Environment when using PBS on the EXCESS cluster:
+    //     USER        : workflow ID
+    //     PBS_JOBID   : PBS job ID (not used by MF)
+    //     PBS_JOBNAME : task ID
+    //     MF_DBKEY    : MF experiment ID (not set by MF!?)
+    char* wf_id   = getenv("USER");
+    char* exp_id  = getenv("MF_DBKEY");
+    char* task_id = getenv("PBS_JOBNAME");
+    mf_api_initialize(EXCESSMFURL, wf_id, exp_id, task_id);
   }
 #endif
 
   perform_experiment();
 
   delete experiment;
+
+#ifdef USE_EXCESS_MF
+  if (useMF) {
+    // Wait some, hoping the MF will finish sending its data.
+    usleep(10000000);
+  }
+#endif
 
   return 0;
 }
