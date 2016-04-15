@@ -1,5 +1,5 @@
 // Base class for Dictionary experiments for the experiment framework.
-// Copyright (C) 2015  Anders Gidenstam
+// Copyright (C) 2015 - 2016  Anders Gidenstam
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free Software
@@ -123,7 +123,8 @@ static bool ETLCBTreeInsert(NBLHandle *handle,
                             int key, void *value,
                             long& count)
 {
-  int ret = c_cbtree::cbtree_insert(static_cast<c_cbtree::cbtree_t*>(handle), (void*)key, value);
+  int ret = c_cbtree::insert_par(static_cast<c_cbtree::cbtree_t*>(handle),
+                                 key, (int)value);
   count++;
   return ret;
 }
@@ -131,7 +132,7 @@ static bool ETLCBTreeLookup(NBLHandle *handle,
                             int key, void*& value,
                             long& countOk, long& countNotFound)
 {
-  if (value = c_cbtree::cbtree_get(static_cast<c_cbtree::cbtree_t*>(handle), (void*)key)) {
+  if (value = (void*)c_cbtree::search_par(*static_cast<c_cbtree::cbtree_t*>(handle), key)) {
     countOk++;
     return true;
   } else {
@@ -143,7 +144,7 @@ static bool ETLCBTreeTryRemove(NBLHandle *handle,
                                int key, void*& value,
                                long& countOk, long& countNotFound)
 {
-  if (c_cbtree::cbtree_delete(static_cast<c_cbtree::cbtree_t*>(handle), (void*)key)) {
+  if (c_cbtree::delete_par(*static_cast<c_cbtree::cbtree_t*>(handle), key)) {
     countOk++;
     // FIXME: Set the out parameter. Not supported by the API.
     return true;
@@ -576,7 +577,7 @@ void NBLExpDictionaryBase::DeInitImplementationNr(int nr)
     break;
   case 2:
 #ifdef USE_ETL
-    c_cbtree::cbtree_free(cbsearchtree);
+    c_cbtree::destroy_tree_nodes(*cbsearchtree);
 #endif
     break;
   case 3:

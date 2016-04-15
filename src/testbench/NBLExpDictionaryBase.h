@@ -1,5 +1,5 @@
 // Base class for Dictionary experiments for the experiment framework.
-// Copyright (C) 2015  Anders Gidenstam
+// Copyright (C) 2015 - 2016  Anders Gidenstam
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free Software
@@ -30,14 +30,13 @@
 #ifdef USE_ETL
 namespace c_cbtree {
 extern "C" {
-// Inlined definitions due to header problems.
-struct cbtree_t;
+// The CBTree header is badly named (common.h) and includes too many things.
+typedef struct node *cbtree_t;
 cbtree_t* cbtree_alloc();
-void* cbtree_free(cbtree_t* map);
-int cbtree_insert(cbtree_t* map, void* key, void* data);
-int cbtree_contains(cbtree_t* map, void* key);
-void *cbtree_get(cbtree_t* map, void* key);
-int cbtree_delete(cbtree_t* map, void* key);
+int search_par(cbtree_t root, int key);
+int delete_par(cbtree_t root, int key);
+int insert_par(cbtree_t* root, int key, int value);
+void destroy_tree_nodes(cbtree_t root);
 }
 }
 #endif

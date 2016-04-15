@@ -1,6 +1,6 @@
 // concurrent_weak_dictionary adapter instantiation for the EXCESS tree
 // library CBTree container.
-// Copyright (C) 2015  Anders Gidenstam
+// Copyright (C) 2015 - 2016  Anders Gidenstam
 //
 // This library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published
@@ -23,19 +23,19 @@
 
 namespace c_cbtree {
 extern "C" {
-// Inlined definitions due to ETL header problems.
-struct cbtree_t;
+// The CBTree header is badly named (common.h) and includes too many things.
+typedef struct node *cbtree_t;
 cbtree_t* cbtree_alloc();
-void* cbtree_free(cbtree_t* map);
-int cbtree_insert(cbtree_t* map, void* key, void* data);
-int cbtree_contains(cbtree_t* map, void* key);
-void *cbtree_get(cbtree_t* map, void* key);
-int cbtree_delete(cbtree_t* map, void* key);
+int search_par(cbtree_t root, int key);
+int delete_par(cbtree_t root, int key);
+int insert_par(cbtree_t* root, int key, int value);
+void destroy_tree_nodes(cbtree_t root);
 }
 }
 
 namespace excess {
 
+// NOTE: The values of both the Key and T* types MUST fit within an int.
 template < class Key, class T >
 class concurrent_weak_dictionary_CBTree
   :  public concurrent_weak_dictionary<Key, T>
@@ -61,17 +61,17 @@ public:
 
     void insert(Key key, T* value)
     {
-      c_cbtree::cbtree_insert(search_tree, (void*)key, (void*)value);
+      c_cbtree::insert_par(search_tree, (int)key, (int)value);
     }
 
     bool lookup(Key key, T*& value)
     {
-      return 0 != (value = c_cbtree::cbtree_get(search_tree, (void*)key));
+      return 0 != (value = (T*)c_cbtree::search_par(*search_tree, (int)key));
     }
 
     void remove(Key key)
     {
-      c_cbtree::cbtree_delete(search_tree, (void*)key);
+      c_cbtree::delete_par(*search_tree, (int)key);
     }
   };
 
@@ -82,7 +82,7 @@ public:
 
   ~concurrent_weak_dictionary_CBTree()
   {
-    c_cbtree::cbtree_free(search_tree);
+    c_cbtree::destroy_tree_nodes(*search_tree);
   }
 
   typename concurrent_weak_dictionary<Key, T>::handle* get_handle()
