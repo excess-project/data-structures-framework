@@ -27,7 +27,7 @@
 #include <tbb/concurrent_hash_map.h>
 #endif
 
-#ifdef USE_ETL
+#ifdef USE_ETL_1
 namespace c_cbtree {
 extern "C" {
 // The CBTree header is badly named (common.h) and includes too many things.
@@ -123,7 +123,7 @@ private:
 #ifdef USE_TBB
   tbb::concurrent_hash_map<int, void *> *tbbhashmap;
 #endif
-#ifdef USE_ETL
+#ifdef USE_ETL_1
   c_cbtree::cbtree_t* cbsearchtree;
 #endif
 #ifdef USE_CCKHT

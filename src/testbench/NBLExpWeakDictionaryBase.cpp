@@ -1,5 +1,5 @@
 // Base class for weak dictionary experiments for the experiment framework.
-// Copyright (C) 2015  Anders Gidenstam
+// Copyright (C) 2015 - 2016  Anders Gidenstam
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free Software
@@ -68,7 +68,19 @@ vector<string> NBLExpWeakDictionaryBase::GetImplementations()
   vector<string> v;
   v.push_back(string("Dictionary NOBLE SkipList" NOBLE_STATUS));
   v.push_back(string("Dictionary TBB concurrent_hash_map" TBB_STATUS));
-  v.push_back(string("Dictionary ETL cbtree_t" ETL_STATUS));
+#ifdef USE_ETL
+#ifdef USE_ETL_1
+  v.push_back(string("Dictionary ETL CBTree" ETL_STATUS));
+#endif
+#ifdef USE_ETL_2
+  v.push_back(string("Dictionary ETL DeltaTree" ETL_STATUS));
+#endif
+#ifdef USE_ETL_3
+  v.push_back(string("Dictionary ETL GreenBST" ETL_STATUS));
+#endif
+#else
+  v.push_back(string("Dictionary ETL *" ETL_STATUS));
+#endif
   v.push_back(string("Dictionary CCKHT Concurrent Cuckoo hash table"
                      CCKHT_STATUS));
   v.push_back(string("Dictionary CCKHT Bucketized Concurrent Cuckoo hash table"
@@ -108,8 +120,18 @@ void NBLExpWeakDictionaryBase::InitImplementationNr(int nr)
     break;
   case 2:
 #ifdef USE_ETL
+#ifdef USE_ETL_1
     weak_dictionary =
       new excess::concurrent_weak_dictionary_CBTree<int,void>();
+#endif
+#ifdef USE_ETL_2
+    weak_dictionary =
+      new excess::concurrent_weak_dictionary_DeltaTree<int,void>();
+#endif
+#ifdef USE_ETL_3
+    weak_dictionary =
+      new excess::concurrent_weak_dictionary_GreenBST<int,void>();
+#endif
 #else
     std::cerr << "Error: Compiled without EXCESS Tree Library support!"
               << std::endl;

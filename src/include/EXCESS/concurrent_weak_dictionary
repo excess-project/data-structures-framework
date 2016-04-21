@@ -1,5 +1,5 @@
 // EXCESS concurrent_weak_dictionary adapters.
-// Copyright (C) 2015  Anders Gidenstam
+// Copyright (C) 2015 - 2016  Anders Gidenstam
 //
 // This library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published
@@ -55,7 +55,10 @@ private:
 
 // EXCESS tree library
 #ifdef USE_ETL
+//#include "impl/concurrent_weak_dictionary_BlueBST" // Useless, is an int-set.
 #include "impl/concurrent_weak_dictionary_CBTree"
+#include "impl/concurrent_weak_dictionary_DeltaTree"
+#include "impl/concurrent_weak_dictionary_GreenBST"
 #endif
 
 // Intel TBB
