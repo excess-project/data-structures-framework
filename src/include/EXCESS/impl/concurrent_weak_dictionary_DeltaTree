@@ -68,14 +68,16 @@ public:
     void insert(Key key, T* value)
     {
       c_deltatree::greenbst_insert(search_tree,
-                                   (c_deltatree::key_t)key, (void*)value);
+                                   (c_deltatree::key_t)key,
+                                   reinterpret_cast<void*>(value));
     }
 
     bool lookup(Key key, T*& value)
     {
       return
-        0 != (value = (T*)c_deltatree::greenbst_get(search_tree,
-                                                    (c_deltatree::key_t)key));
+        0 != (value = reinterpret_cast<T*>
+                        (c_deltatree::greenbst_get(search_tree,
+                                                   (c_deltatree::key_t)key)));
     }
 
     void remove(Key key)

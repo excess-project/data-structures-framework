@@ -37,7 +37,7 @@ typedef tbb::concurrent_hash_map<int,void*> tbb_hash_map_t;
 #define TBB_STATUS " (unavailable)"
 #endif
 
-#ifdef USE_ETL_1
+#ifdef USE_ETL_CBTREE
 #define ETL_STATUS
 #else
 #define ETL_STATUS " (unavailable)"
@@ -118,7 +118,7 @@ static void TBBHashMapFreeHandle(void *handle)
 }
 #endif
 
-#ifdef USE_ETL_1
+#ifdef USE_ETL_CBTREE
 static bool ETLCBTreeInsert(NBLHandle *handle,
                             int key, void *value,
                             long& count)
@@ -402,7 +402,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
 #endif
     break;
   case 2:
-#ifdef USE_ETL_1
+#ifdef USE_ETL_CBTREE
     cbsearchtree = c_cbtree::cbtree_alloc();
 #else
     std::cerr << "Error: Compiled without EXCESS Tree Library support!"
@@ -466,7 +466,7 @@ void NBLExpDictionaryBase::InitImplementationNr(int nr)
 #endif
     break;
   case 2:
-#ifdef USE_ETL_1
+#ifdef USE_ETL_CBTREE
     Insert = ETLCBTreeInsert;
     Lookup = ETLCBTreeLookup;
     TryRemove = ETLCBTreeTryRemove;
@@ -530,7 +530,7 @@ NBLHandle *NBLExpDictionaryBase::ThreadInitImplementationNr(int nr)
 #endif
     break;
   case 2:
-#ifdef USE_ETL_1
+#ifdef USE_ETL_CBTREE
     handle = cbsearchtree;
 #endif
     break;
@@ -576,7 +576,7 @@ void NBLExpDictionaryBase::DeInitImplementationNr(int nr)
 #endif
     break;
   case 2:
-#ifdef USE_ETL_1
+#ifdef USE_ETL_CBTREE
     c_cbtree::destroy_tree_nodes(*cbsearchtree);
 #endif
     break;

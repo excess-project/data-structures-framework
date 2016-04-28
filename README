@@ -8,7 +8,8 @@ EXCESS data structures framework
 LICENSES OF DEPENDENCIES
 ------------------------
 
-The following applies when the respective dependency is compiled in:
+The following applies, to the best of my knowledge, when the respective
+dependency is compiled in:
 
 NOBLE
   Copyright (C) Parallel Scalable Solutions AB, http://www.non-blocking.com
@@ -19,6 +20,17 @@ Intel Threading Building Blocks:
   Copyright 2005-2014 Intel Corporation.  All Rights Reserved.
   GPL v2 or later with the "runtime exception".
   A binary including it may be distributed under GPL v3+.
+
+EXCESS Tree library
+  Composite collection of concurrent search tree implementations.
+  For DeltaTree and GreenBST:
+    Copyright (C) 2013 - 2016, Ibrahim Umar.
+    The Apache License, Version 2.0.
+    A binary including these may be distributed under GPL v3+.
+  For CBTree:
+    Copyright (C) 2013 - 2016, Ibrahim Umar.
+    Copyright (C) 2010  Amittai Aviram.
+    GPL v3+.
 
 CCKHashtable
   Copyright (C) 2014, Nhan Nguyen and Philippas Tsigas. All Rights Reserved.
@@ -47,7 +59,8 @@ OpenBLAS (See the LICENSE file in the OpenBLAS source archive)
   copyright statement is included.
 
 librsb
-  Copyright (C) Michele Martone. LGPL v3.
+  Copyright (C) Michele Martone.
+  LGPL v3.
   A binary including it may be distributed under GPL v3+.
 
 INSTALL

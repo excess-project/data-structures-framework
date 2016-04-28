@@ -25,10 +25,13 @@ namespace c_cbtree {
 extern "C" {
 // The CBTree header is badly named (common.h) and includes too many things.
 typedef struct node *cbtree_t;
+typedef int key_t;
+typedef int value_t;
+
 cbtree_t* cbtree_alloc();
-int search_par(cbtree_t root, int key);
-int delete_par(cbtree_t root, int key);
-int insert_par(cbtree_t* root, int key, int value);
+int search_par(cbtree_t root, key_t key);
+int delete_par(cbtree_t root, key_t key);
+int insert_par(cbtree_t* root, key_t key, value_t value);
 void destroy_tree_nodes(cbtree_t root);
 }
 }
@@ -61,17 +64,19 @@ public:
 
     void insert(Key key, T* value)
     {
-      c_cbtree::insert_par(search_tree, (int)key, (int)value);
+      c_cbtree::insert_par(search_tree,
+                           (c_cbtree::key_t)key, (c_cbtree::value_t)value);
     }
 
     bool lookup(Key key, T*& value)
     {
-      return 0 != (value = (T*)c_cbtree::search_par(*search_tree, (int)key));
+      return 0 != (value = (T*)c_cbtree::search_par(*search_tree,
+                                                    (c_cbtree::key_t)key));
     }
 
     void remove(Key key)
     {
-      c_cbtree::delete_par(*search_tree, (int)key);
+      c_cbtree::delete_par(*search_tree, (c_cbtree::key_t)key);
     }
   };
 

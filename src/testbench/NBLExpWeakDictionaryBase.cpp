@@ -69,13 +69,13 @@ vector<string> NBLExpWeakDictionaryBase::GetImplementations()
   v.push_back(string("Dictionary NOBLE SkipList" NOBLE_STATUS));
   v.push_back(string("Dictionary TBB concurrent_hash_map" TBB_STATUS));
 #ifdef USE_ETL
-#ifdef USE_ETL_1
+#ifdef USE_ETL_CBTREE
   v.push_back(string("Dictionary ETL CBTree" ETL_STATUS));
 #endif
-#ifdef USE_ETL_2
+#ifdef USE_ETL_DELTATREE
   v.push_back(string("Dictionary ETL DeltaTree" ETL_STATUS));
 #endif
-#ifdef USE_ETL_3
+#ifdef USE_ETL_GREENBST
   v.push_back(string("Dictionary ETL GreenBST" ETL_STATUS));
 #endif
 #else
@@ -120,15 +120,15 @@ void NBLExpWeakDictionaryBase::InitImplementationNr(int nr)
     break;
   case 2:
 #ifdef USE_ETL
-#ifdef USE_ETL_1
+#ifdef USE_ETL_CBTREE
     weak_dictionary =
       new excess::concurrent_weak_dictionary_CBTree<int,void>();
 #endif
-#ifdef USE_ETL_2
+#ifdef USE_ETL_DELTATREE
     weak_dictionary =
       new excess::concurrent_weak_dictionary_DeltaTree<int,void>();
 #endif
-#ifdef USE_ETL_3
+#ifdef USE_ETL_GREENBST
     weak_dictionary =
       new excess::concurrent_weak_dictionary_GreenBST<int,void>();
 #endif
@@ -191,7 +191,7 @@ void NBLExpWeakDictionaryBase::InitImplementationNr(int nr)
 
 void NBLExpWeakDictionaryBase::WeakDictionaryInsert
   (weak_dictionary_t::handle* handle,
-   int key, void *value,
+   int key, void* value,
    long& count)
 {
   handle->insert(key, value);

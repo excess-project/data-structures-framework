@@ -55,7 +55,8 @@ private:
 
 // EXCESS tree library
 #ifdef USE_ETL
-//#include "impl/concurrent_weak_dictionary_BlueBST" // Useless, is an int-set.
+// NOTE: Currently only one of these at the time can be linked into in
+//       one binary.
 #include "impl/concurrent_weak_dictionary_CBTree"
 #include "impl/concurrent_weak_dictionary_DeltaTree"
 #include "impl/concurrent_weak_dictionary_GreenBST"

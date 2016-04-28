@@ -10,9 +10,11 @@ TBBDIR = /opt/IntelTBB/tbb
 TBBLIB = -Wl,-rpath,$(TBBDIR)/build/linux_intel64_gcc_cc4.6_libc2.15_kernel3.13.0_release -L$(TBBDIR)/build/linux_intel64_gcc_cc4.6_libc2.15_kernel3.13.0_release/ -ltbb
 
 # Search tree implementations from
-#  Phuong, UIT for EXCESS
+#  UIT for EXCESS
 #ETLDIR = /opt/EXCESS/EXCESSTreeLibrary
-#ETLLIB = $(ETLDIR)/lib/libCBTree.a
+#ETLLIB = $(ETLDIR)/lib/libcbtree.a
+#ETLLIB = $(ETLDIR)/lib/libdeltatree.a
+#ETLLIB = $(ETLDIR)/lib/libgreenbst.a
 
 # Hash map implementations from
 #  [Nhan Nguyen and Philippas Tsigas, "Lock-free Cuckoo Hashing".
@@ -30,8 +32,8 @@ TBBLIB = -Wl,-rpath,$(TBBDIR)/build/linux_intel64_gcc_cc4.6_libc2.15_kernel3.13.
 
 # Support libraries
 #  OpenBLAS
-BLASDIR = /opt/OpenBLAS/st
-BLASLIB = $(BLASDIR)/lib/libopenblas.a
+#BLASDIR = /opt/OpenBLAS/st
+#BLASLIB = $(BLASDIR)/lib/libopenblas.a
 
 #  librsb
 #LIBRSBDIR = /opt/librsb/1.2.0-rc2
@@ -49,12 +51,12 @@ BLASLIB = $(BLASDIR)/lib/libopenblas.a
 #EXCESSMFLIB = -Wl,-rpath=$(EXCESSMFDIR)/lib $(EXCESSMFDIR)/lib/libmf.so
 
 # General testbench configuration
-TGFLAGS += -DUSE_NOBLE
-TGFLAGS += -DUSE_TBB
-#TGFLAGS += -DUSE_ETL
+#TGFLAGS += -DUSE_NOBLE
+#TGFLAGS += -DUSE_TBB
+#TGFLAGS += -DUSE_ETL -DUSE_ETL_DELTATREE
 #TGFLAGS += -DUSE_CCKHT
 #TGFLAGS += -DUSE_HSHT
-TGFLAGS += -DUSE_BLAS
+#TGFLAGS += -DUSE_BLAS
 #TGFLAGS += -DUSE_LIBRSB
 #TGFLAGS += -DUSE_COMBBLAS
 TGFLAGS += -DNOSAVEMANDELBROT
