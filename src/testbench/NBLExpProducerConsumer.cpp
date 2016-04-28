@@ -1,5 +1,5 @@
 // Producer-Consumer microbenchmark for the experiment framework.
-// Copyright (C) 2014 - 2015  Anders Gidenstam
+// Copyright (C) 2014 - 2016  Anders Gidenstam
 // Based on NBLExpQueue.cpp
 // Copyright (C) 2011  Håkan Sundell
 //
@@ -240,8 +240,8 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
     switch (COMM_NR) {
     case 0: // N Randomized Producers/Consumers
       for(;mainCounter;i++) {
-        int op=operationList[myId][i%MAX_OPS].op;
-        int *arg1=&operationList[myId][i%MAX_OPS].arg1;
+        int op    = operationList[myId][i%MAX_OPS].op;
+        int* arg1 = const_cast<int*>(&operationList[myId][i%MAX_OPS].arg1);
         
         if(op==0) {
           // Producer parallel work.
@@ -249,7 +249,7 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
           
           Insert(handle,(void*)arg1, countInsert);
         } else if(op==1) {
-          void * result=
+          void* result=
             TryRemove(handle,
                       countOkTryRemove, countEmptyTryRemove);
           // Consumer parallel work.
@@ -283,7 +283,7 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
         break;        
       }
       for(;mainCounter;) {
-        int *arg1=&operationList[myId][0].arg1;
+        int* arg1 = const_cast<int*>(&operationList[myId][0].arg1);
         
         if(do_enq) {
           // Producer parallel work.
@@ -291,7 +291,7 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
 
           Insert(handle,(void*)arg1, countInsert);
         } else {
-          void * result =
+          void* result =
             TryRemove(handle,
                       countOkTryRemove, countEmptyTryRemove);
 
@@ -340,7 +340,7 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
     }
 
     for(;mainCounter;) {
-      int *arg1=&operationList[myId][0].arg1;
+      int* arg1 = const_cast<int*>(&operationList[myId][0].arg1);
 
       if(do_enq) { // Not used in the 0 producers case.
         // Producer.
@@ -355,7 +355,7 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
           }
         } else {
           // Drain the collection.
-          void * result = TryRemove(handle, dummy1, dummy2);
+          void* result = TryRemove(handle, dummy1, dummy2);
           if (!result && leader) {
             ins_by_me++;
             if (ins_by_me==20) {
@@ -370,7 +370,7 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
       } else {
         // Consumer.
         if (active) {
-          void * result =
+          void* result =
             TryRemove(handle,
                       countOkTryRemove, countEmptyTryRemove);
           if (leader && !result) {
@@ -381,7 +381,7 @@ void NBLExpProducerConsumer::RunImplementationNr(int nr, int threadID)
           }
         } else {
           if (COMM_NR != 4) {
-            void * result =
+            void* result =
               TryRemove(handle, dummy1, dummy2);
           } else if (leader) {
             // The 0 producers case: pre-fill the collection for the next phase.
