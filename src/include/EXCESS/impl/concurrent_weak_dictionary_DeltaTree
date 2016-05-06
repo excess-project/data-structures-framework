@@ -23,18 +23,17 @@
 
 namespace c_deltatree {
 extern "C" {
-// The DeltaTree header defines and includes too many things that one
-// would not want to clutter the client's scope.
-// NOTE: For some reason libdeltatree exports its functions as greenbst_*.
+// The DeltaTree header defines and includes too many things.
 typedef struct global deltatree_t;
-typedef void*  key_t;
+typedef unsigned key_t;
 
-deltatree_t* greenbst_alloc();
-int          greenbst_free(deltatree_t* map);
-int          greenbst_insert(deltatree_t* map, key_t key, void* data);
-int          greenbst_contains(deltatree_t* map, key_t key);
-void*        greenbst_get(deltatree_t* map, key_t key);
-int          greenbst_delete(deltatree_t* map, key_t key);
+deltatree_t* deltatree_alloc();
+int          deltatree_free(deltatree_t*);
+
+int   deltatree_contains(deltatree_t *, key_t);
+void* deltatree_get(deltatree_t *, key_t);
+int   deltatree_insert(deltatree_t *, key_t, void*);
+int   deltatree_delete(deltatree_t *, key_t);
 }
 }
 
@@ -67,28 +66,28 @@ public:
 
     void insert(Key key, T* value)
     {
-      c_deltatree::greenbst_insert(search_tree,
-                                   (c_deltatree::key_t)key,
-                                   reinterpret_cast<void*>(value));
+      c_deltatree::deltatree_insert(search_tree,
+                                    (c_deltatree::key_t)key,
+                                    reinterpret_cast<void*>(value));
     }
 
     bool lookup(Key key, T*& value)
     {
       return
         0 != (value = reinterpret_cast<T*>
-                        (c_deltatree::greenbst_get(search_tree,
-                                                   (c_deltatree::key_t)key)));
+                        (c_deltatree::deltatree_get(search_tree,
+                                                    (c_deltatree::key_t)key)));
     }
 
     void remove(Key key)
     {
-      c_deltatree::greenbst_delete(search_tree, (c_deltatree::key_t)key);
+      c_deltatree::deltatree_delete(search_tree, (c_deltatree::key_t)key);
     }
   };
 
   concurrent_weak_dictionary_DeltaTree()
   {
-    search_tree = c_deltatree::greenbst_alloc();
+    search_tree = c_deltatree::deltatree_alloc();
   }
 
   ~concurrent_weak_dictionary_DeltaTree()
