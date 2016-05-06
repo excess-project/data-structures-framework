@@ -30,12 +30,16 @@
 #ifdef USE_ETL_CBTREE
 namespace c_cbtree {
 extern "C" {
-// The CBTree header is badly named (common.h) and includes too many things.
+// The CBTree header includes too many things.
 typedef struct node *cbtree_t;
+typedef void* key_t;
+typedef void* value_t;
+
 cbtree_t* cbtree_alloc();
-int search_par(cbtree_t root, int key);
-int delete_par(cbtree_t root, int key);
-int insert_par(cbtree_t* root, int key, int value);
+int search_par(cbtree_t root, key_t key);
+value_t get_par(cbtree_t root, key_t key);
+int delete_par(cbtree_t root, key_t key);
+int insert_par(cbtree_t* root, key_t key, value_t value);
 void destroy_tree_nodes(cbtree_t root);
 }
 }

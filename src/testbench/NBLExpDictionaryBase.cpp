@@ -124,7 +124,7 @@ static bool ETLCBTreeInsert(NBLHandle *handle,
                             long& count)
 {
   int ret = c_cbtree::insert_par(static_cast<c_cbtree::cbtree_t*>(handle),
-                                 key, (int)value);
+                                 (c_cbtree::key_t)key, value);
   count++;
   return ret;
 }
@@ -132,7 +132,7 @@ static bool ETLCBTreeLookup(NBLHandle *handle,
                             int key, void*& value,
                             long& countOk, long& countNotFound)
 {
-  if (value = (void*)c_cbtree::search_par(*static_cast<c_cbtree::cbtree_t*>(handle), key)) {
+  if (value = c_cbtree::search_par(*static_cast<c_cbtree::cbtree_t*>(handle), (c_cbtree::key_t)key)) {
     countOk++;
     return true;
   } else {
@@ -144,7 +144,8 @@ static bool ETLCBTreeTryRemove(NBLHandle *handle,
                                int key, void*& value,
                                long& countOk, long& countNotFound)
 {
-  if (c_cbtree::delete_par(*static_cast<c_cbtree::cbtree_t*>(handle), key)) {
+  if (c_cbtree::delete_par(*static_cast<c_cbtree::cbtree_t*>(handle),
+                           (c_cbtree::key_t)key)) {
     countOk++;
     // FIXME: Set the out parameter. Not supported by the API.
     return true;
