@@ -414,7 +414,7 @@ static void process_arguments(int argc, char** argv)
   using std::string;
 
   int i = 1;
-  while (i < argc) {
+  while (i < argc - 1) {
     string arg = string(argv[i]);
     if (arg.compare("-h") == 0) {
       print_usage(argc, argv);
@@ -444,16 +444,19 @@ static void process_arguments(int argc, char** argv)
         exit(-1);
       }
     } else {
-      if (i == argc - 1) {
-        matrix_filename = string(argv[i]);
-      } else {
-        std::cerr << "Error: Unknown argument '" << argv[i] << "'."
-                  << std::endl;
-        print_usage(argc, argv);
-        exit(-1);
-      }
+      std::cerr << "Error:  Unrecognized command line argument '"
+                << arg << "'." << std::endl;
+      print_usage(argc, argv);
+      exit(-1);
     }
     i++;
+  }
+  if (i == argc - 1) {
+    matrix_filename = string(argv[i]);
+  } else {
+    std::cerr << "Error: No matrix file given." << std::endl;
+    print_usage(argc, argv);
+    exit(-1);
   }
 }
 
@@ -490,9 +493,9 @@ static void print_usage(int argc, char** argv)
     cout << "                      " << "4.  " << "CombBLAS."
          << endl;
 #endif
-    cout << "  -o <file>       Save the resulting matrix in <file> in MatrixMarket format."
-         << endl; 
   }
+  cout << "  -o <file>       Save the resulting matrix in <file> in MatrixMarket format."
+       << endl; 
 }
 
  static bool try_parse(std::string s, int& i)
