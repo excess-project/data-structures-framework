@@ -1,0 +1,23 @@
+EXCESS GRS components for the EXCESS data structures framework
+
+ Copyright (C) 2016  Anders Gidenstam
+
+ License: GPL v3+
+
+Currently in a very early state.
+
+INSTALL
+-------
+
+1. Place the GRS snapshot next to the data-structures-framework directory.
+   The COMPILE.sh script assumes the GRS directory is named 'grs_0.09_snap'.
+
+2. Run ./COMPILE.sh
+   Needs GCC and nvcc with OpenMP support.
+
+3. The matrices needed can be downloaded from
+     http://yifanhu.net/GALLERY/GRAPHS/search.html
+   in Matrix Market format (see the top-level README).
+
+4. Run the GRS sparse matrix-matrix multiplication test.
+   $ ./grs_spmmtest ../../matrices/general/R16.mtx
