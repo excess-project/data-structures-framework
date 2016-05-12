@@ -22,15 +22,14 @@
 #ifndef __SPGEMM_CDS_H
 #define __SPGEMM_CDS_H
 
-#if USE_OPENMP
 #include <omp.h>
-#endif
 
 #include <algorithm>
 #include <vector>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <iostream>
 
 #include "primitives.h"
@@ -159,26 +158,57 @@ SpMatrix SpGEMM_DSParallel_RowStore(double alpha, const SpMatrix& A,
   concurrent_bag_t< SpMatrix::MatrixRow_t >* Ci_bag =
     new concurrent_bag_t< SpMatrix::MatrixRow_t >();
   int* element_count = (int*)calloc(A.m, sizeof(int));
+  SpMatrix C(0, 0, 0);
+  volatile int phase1 = 0;
+  volatile int phase2 = 0;
+  volatile int phase3 = 0;
+  struct timespec sleep_time;
+  sleep_time.tv_sec  = 0;
+  sleep_time.tv_nsec = 0;
 
 #pragma omp parallel
   { 
+    FAA32(&phase1, 1);
     SpGEMM_DSParallel_RowStore_1P<concurrent_bag_t>(alpha, A, beta, B,
                                                     Ci_bag,
                                                     &nextci, element_count);
-  }
+    FAA32(&phase1, -1); // This should be safe as no worker exits phase 1
+                        // before all work units have been taken (but not
+                        // necessarily processed) so any late arrivals that
+                        // hasn't increased phase1 yet won't touch anything.
 
-  // Create the result matrix C.
-  SpMatrix C(A.m, B.n, 0);
+    // Wait for phase 1 to end.
+    while (phase1 > 0) {
+      nanosleep(&sleep_time, NULL);
+    }
 
-  // Sequential preparation of C.
-  SpGEMM_DSParallel_RowStore_2S<concurrent_bag_t>(C, element_count);
+    // Allow exactly one worker to perfrom the sequential phase.
+    {
+      int p2 = phase2;
+      if (!p2) {
+        FAA32(&phase2, 1);
+      }
+      if (!p2) {
+        // Perform the sequential phase 2. Done by the first thread through.
+        // Create the result matrix C.
+        C = SpMatrix(A.m, B.n, 0);
 
-  // Fill C in parallel from the row store.
-#pragma omp parallel
-  {
+        // Sequential preparation of C.
+        SpGEMM_DSParallel_RowStore_2S<concurrent_bag_t>(C, element_count);
+
+        // Launch phase 3.
+        FAA32(&phase3, 1);
+      } else {
+        // Wait for phase 3 to begin.
+        while (phase3 == 0) {
+          nanosleep(&sleep_time, NULL);
+        }
+      }
+    }
+    
+    // Phase 3: Fill C in parallel from the row store.
     SpGEMM_DSParallel_RowStore_3P<concurrent_bag_t>(C, Ci_bag, element_count);
   }
-
   std::free(element_count);
   delete Ci_bag;
   return C;
