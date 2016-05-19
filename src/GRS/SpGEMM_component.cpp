@@ -20,6 +20,7 @@
 
 #include "SpGEMM_variant_sequential.h"
 #include "SpGEMM_variant_DSParallel.h"
+#include "SpGEMM_variant_bhSPARSE_cuda.h"
 
 namespace EXCESS_GRS {
 
@@ -32,7 +33,7 @@ SpGEMM_component_csr::SpGEMM_component_csr()
   //       assumed to be GPU based.
   //variants.push_back(new SpGEMM_variant_csr_sequential(&this_component, 0));
   variants.push_back(new SpGEMM_variant_csr_dsparallel(&this_component, 0));
-  variants.push_back(new SpGEMM_variant_csr_sequential(&this_component, 1));
+  variants.push_back(new SpGEMM_variant_csr_bhSPARSE_cuda(&this_component, 1));
 }
 
 SpGEMM_component_csr::~SpGEMM_component_csr()
