@@ -32,13 +32,14 @@ static void test_grs_spmm_csr(int variant);
 
 static std::string matrix_filename;
 static std::string result_matrix_filename;
+static int         variant = 0;
 
 int main(int argc, char** argv)
 {
   process_arguments(argc, argv);
 
   std::cout << "Testing grs_SpGEMM_csr component..." << std::endl;
-  test_grs_spmm_csr(0);
+  test_grs_spmm_csr(variant);
   std::cout << "done." << std::endl;
 
   return 0;
@@ -120,23 +121,17 @@ static void process_arguments(int argc, char** argv)
     if (arg.compare("-h") == 0) {
       print_usage(argc, argv);
       exit(0);
-      /*
-    } else if (arg.compare("-a") == 0) {
-      int algno;
-      int ok = 0;
-      if ((++i < argc) && try_parse(string(argv[i]), algno) &&
-          (0 <= algno) && (algno < no_algorithms)) {
-        algorithm = algorithm_t(algno);
-        ok = 1;
+    }  else if (arg.compare("-v") == 0) {
+      int var;
+      if ((++i < argc) && try_parse(string(argv[i]), var) &&
+          (0 <= var) && (var < 2)) {
+        variant = var;
       } else {
-        std::cerr << "Error: Bad algorithm# given with '-a " << argv[i] << "'."
+        std::cerr << "Error: Bad variant# given with '-v " << argv[i] << "'."
                   << std::endl;
-      }
-      if (!ok) {
         print_usage(argc, argv);
         exit(-1);
       }
-      */
     } else if (arg.compare("-o") == 0) {
       if (++i < argc - 1) {
         result_matrix_filename = string(argv[i]);
@@ -169,36 +164,22 @@ static void print_usage(int argc, char** argv)
   using std::endl;
 
   cout << endl;
-  cout << "EXCESS sparse matrix multiplication experiment." << endl;
-  //cout << "  Copyright (C) 2015 - 2016  Anders Gidenstam" << endl;
+  cout << "EXCESS GRS sparse matrix multiplication experiment." << endl;
+  //cout << "  Copyright (C) 2016  Anders Gidenstam" << endl;
 
   cout << endl;
   cout << "Usage: " << argv[0] << " [options] <matrix file>" << endl;
   cout << endl;
 
   cout << "  -h                Print this message and exit." << endl;
-  /*
-  cout << "  -a <algorithm#>   Set the SpGEMM algorithm/library to use."
-       << endl;
-  cout << "                    <algorithm#> can be one of the following."
+  cout << "  -v <variant#>     Set the GRS SpGEMM variant to use."
        << endl;
   {
-    cout << "                      " << "0.  " << "New EXCESS algorithm with row store."
+    cout << "                      " << "0.  " << "CPU (New EXCESS algorithm)."
          << endl;
-    cout << "                      " << "1.  " << "New EXCESS algorithm with triplet store."
+    cout << "                      " << "1.  " << "GPU (bhSPARSE CSR cuda)."
          << endl;
-    cout << "                      " << "2.  " << "Sequential Gustavson algorithm."
-         << endl;
-#ifdef USE_LIBRSB
-    cout << "                      " << "3.  " << "librsb."
-         << endl;
-#endif
-#ifdef USE_COMBBLAS
-    cout << "                      " << "4.  " << "CombBLAS."
-         << endl;
-#endif
   }
-  */
   cout << "  -o <file>       Save the resulting matrix in <file> in MatrixMarket format."
        << endl; 
 }
