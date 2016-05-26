@@ -23,6 +23,8 @@
 
 #include <grs.h>
 
+#include <cstring>
+
 #include <SpMatrix.h>
 
 namespace EXCESS_GRS {
@@ -34,80 +36,114 @@ struct matrix_csr
   struct grs_vector* vec_rp;
   struct grs_vector* vec_ci;
   struct grs_vector* vec_v;
-  int*      m_n_nzmax;
-  SpMatrix* matrix;
-  bool      grs_dirty;
 
   matrix_csr(int m, int n)
   {
-    matrix = new SpMatrix(m, n, 0);
-    initialize(m, n);
+    initialize(m, n, 0);
   }
 
-  matrix_csr(SpMatrix mat)
+  matrix_csr(SpMatrix matrix)
   {
-    matrix = new SpMatrix(mat);
-    initialize(mat.m, mat.n);
-  }
-
-  matrix_csr(grs_data** argvin)
-  {
-    // NOTE: Special purpose constructor - some members are left uninitialized.
-
-    vec_m_n_nzmax = (grs_vector*)argvin[0]->d; // matrix m; n; nzmax
-    vec_rp = (grs_vector*)argvin[1]->d; // matrix rp
-    vec_ci = (grs_vector*)argvin[2]->d; // matrix ci
-    vec_v  = (grs_vector*)argvin[3]->d; // matrix v
-
-    // Initialize m_n_nzmax using the existing storage.
-    m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
-
-    // Initialize the internal SpMatrix using the already existing storage.
-    matrix = new SpMatrix(0, 0, 0);
-    std::free(matrix->rp);
-    std::free(matrix->ci);
-    std::free(matrix->v);
-    matrix->m = m_n_nzmax[0];
-    matrix->n = m_n_nzmax[1];
-    matrix->nzmax = m_n_nzmax[2];
-    matrix->rp = (int*)read_grs_vector_on_cpu(vec_rp);
-    matrix->ci = (int*)read_grs_vector_on_cpu(vec_ci);
-    matrix->v  = (double*)read_grs_vector_on_cpu(vec_v);
-    grs_dirty = 0;
+    initialize(matrix.m, matrix.n, matrix.nzmax);
+    // Copy the matrix contents. 
+    std::memcpy(read_grs_vector_on_cpu(vec_rp),
+                matrix.rp,
+                (matrix.m+1) * sizeof(int));
+    std::memcpy(read_grs_vector_on_cpu(vec_ci),
+                matrix.ci,
+                matrix.nzmax * sizeof(int));
+    std::memcpy(read_grs_vector_on_cpu(vec_v),
+                matrix.v,
+                matrix.nzmax * sizeof(double));
   }
 
   ~matrix_csr()
   {
-    /* NOTE: Should not be done for arguments!
+    std::cout << "SpGEMM_component.h::~matrix_csr()" << std::endl;
+    // NOTE: The actual data blocks should also be freed.
     free(vec_m_n_nzmax);
     free(vec_rp);
     free(vec_ci);
     free(vec_v);
-    */
-
-    //delete matrix;
-    //free(m_n_nzmax);
   }
 
   int rows() const
   {
+    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
     return m_n_nzmax[0];
   }
 
   int columns() const
   {
+    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
     return m_n_nzmax[1];
   }
 
   int nonzeros() const
   {
+    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
     return m_n_nzmax[2];
   }
 
   void save_to_file(std::string filename)
   {
-    refresh();
-    matrix->SaveToFile(filename);
+    SpMatrix matrix = convert_to_SpMatrix();
+    matrix.SaveToFile(filename);
+  }
+
+  // Creates an independent SpMatrix instance.
+  SpMatrix convert_to_SpMatrix()
+  {
+    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
+    SpMatrix matrix = SpMatrix(m_n_nzmax[0],
+                               m_n_nzmax[1],
+                               m_n_nzmax[2]);
+    std::memcpy(matrix.rp,
+                read_grs_vector_on_cpu(vec_rp),
+                (matrix.m+1) * sizeof(int));
+    std::memcpy(matrix.ci,
+                read_grs_vector_on_cpu(vec_ci),
+                matrix.nzmax * sizeof(int));
+    std::memcpy(matrix.v,
+                read_grs_vector_on_cpu(vec_v),
+                matrix.nzmax * sizeof(double));
+    return matrix;
+  }
+
+  // Creates a SpMatrix instance that shares its storage with GRS.
+  // NOTE: Beware of the SpMatrix destructor! Run clear() on the matrix
+  //       before it goes out of scope.
+  static void convert_from_grs_input(grs_data** argvin, SpMatrix& matrix)
+  {
+    // Remove the old matrix content.
+    std::free(matrix.rp);
+    std::free(matrix.ci);
+    std::free(matrix.v);
+
+    grs_vector* vec_m_n_nzmax = (grs_vector*)argvin[0]->d; // matrix m; n; nzmax
+    grs_vector* vec_rp = (grs_vector*)argvin[1]->d; // matrix rp
+    grs_vector* vec_ci = (grs_vector*)argvin[2]->d; // matrix ci
+    grs_vector* vec_v  = (grs_vector*)argvin[3]->d; // matrix v
+
+    // Read m_n_nzmax.
+    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
+
+    // Initialize the SpMatrix using the already existing storage.
+    matrix.m = m_n_nzmax[0];
+    matrix.n = m_n_nzmax[1];
+    matrix.nzmax = m_n_nzmax[2];
+    matrix.rp = (int*)read_grs_vector_on_cpu(vec_rp);
+    matrix.ci = (int*)read_grs_vector_on_cpu(vec_ci);
+    matrix.v  = (double*)read_grs_vector_on_cpu(vec_v);
+  }
+
+  // To make a SpMatrix sharing storage with GRS safe for destruction.
+  static void clear(SpMatrix& matrix)
+  {
+    matrix.nzmax = 0;
+    matrix.rp = 0;
+    matrix.ci = 0;
+    matrix.v  = 0;
   }
 
   static void convert_to_grs_output(SpMatrix& matrix, grs_data** argvout)
@@ -131,33 +167,29 @@ struct matrix_csr
     ((grs_vector*)argvout[1]->d)->mode  = 0;
     ((grs_vector*)argvout[1]->d)->d_cpu = matrix.rp;
     ((grs_vector*)argvout[1]->d)->size  = (matrix.m*sizeof(int))/sizeof(float);
-    matrix.rp = NULL;
 
     // Set ci using the existing result matrix.
     ((grs_vector*)argvout[2]->d)->mode  = 0;
     ((grs_vector*)argvout[2]->d)->d_cpu = matrix.ci;
     ((grs_vector*)argvout[2]->d)->size  =
       (matrix.nzmax*sizeof(int))/sizeof(float);
-    matrix.ci = NULL;
 
     // Set v using the existing result matrix.
     ((grs_vector*)argvout[3]->d)->mode  = 0;
     ((grs_vector*)argvout[3]->d)->d_cpu = matrix.v;
     ((grs_vector*)argvout[3]->d)->size  =
       (matrix.nzmax*sizeof(double))/sizeof(float);
-    matrix.v = NULL;
 
-    matrix.nzmax = 0;
+    clear(matrix);
   }
 
 private:
-  void initialize(int m, int n)
+  void initialize(int m, int n, int nzmax)
   {
-    grs_dirty = 0;
-    m_n_nzmax = (int*)malloc(3*sizeof(int));
-    m_n_nzmax[0] = matrix->m;
-    m_n_nzmax[1] = matrix->n;
-    m_n_nzmax[2] = matrix->nzmax;
+    int* m_n_nzmax = (int*)malloc(3*sizeof(int));
+    m_n_nzmax[0] = m;
+    m_n_nzmax[1] = n;
+    m_n_nzmax[2] = nzmax;
 
     grs_data_init(&d_m_n_nzmax, GRS_VECTOR);
     grs_data_init(&d_rp, GRS_VECTOR);
@@ -175,29 +207,12 @@ private:
     grs_data_set_vector(&d_v,  vec_v);
 
     grs_vector_init(vec_m_n_nzmax, (float*)m_n_nzmax, 4, "m_n_nzmax");
-    grs_vector_init(vec_rp, (float*)matrix->rp,
-                    (m_n_nzmax[0]*sizeof(int))/sizeof(float), "rp");
-    grs_vector_init(vec_ci, (float*)matrix->ci,
-                    (m_n_nzmax[2]*sizeof(int))/sizeof(float), "ci");
-    grs_vector_init(vec_v,  (float*)matrix->v,
-                    (m_n_nzmax[2]*sizeof(double))/sizeof(float), "v");
-  }
-
-  void refresh()
-  {
-    // Refresh the internal SpMatrix from the GRS storage.
-    if (grs_dirty) {
-      std::free(matrix->rp);
-      std::free(matrix->ci);
-      std::free(matrix->v);
-      m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
-      matrix->m = m_n_nzmax[0];
-      matrix->n = m_n_nzmax[1];
-      matrix->nzmax = m_n_nzmax[2];
-      matrix->rp = (int*)read_grs_vector_on_cpu(vec_rp);
-      matrix->ci = (int*)read_grs_vector_on_cpu(vec_ci);
-      matrix->v  = (double*)read_grs_vector_on_cpu(vec_v);
-    }
+    grs_vector_init(vec_rp, (float*)malloc((m+1)*sizeof(int)),
+                    (m*sizeof(int))/sizeof(float), "rp");
+    grs_vector_init(vec_ci, (float*)malloc(nzmax*sizeof(int)),
+                    (nzmax*sizeof(int))/sizeof(float), "ci");
+    grs_vector_init(vec_v,  (float*)malloc(nzmax*sizeof(double)),
+                    (nzmax*sizeof(double))/sizeof(float), "v");
   }
 
   static float* read_grs_vector_on_cpu(grs_vector* vec_x)

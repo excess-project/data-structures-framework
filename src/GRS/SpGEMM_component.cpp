@@ -66,7 +66,6 @@ SpGEMM_component_csr::setup_call(struct grs_call* call,
   grs_call_add_output_opnd(call, &Result.d_rp);
   grs_call_add_output_opnd(call, &Result.d_ci);
   grs_call_add_output_opnd(call, &Result.d_v);
-  Result.grs_dirty = 1;
 }
 
 }

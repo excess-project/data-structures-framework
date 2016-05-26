@@ -57,19 +57,19 @@ static void perform_op(int argcin, int argcout,
               << std::endl;
     return;
   }
-  matrix_csr A = matrix_csr(argvin);
-  matrix_csr B = matrix_csr(argvin + 4);
+  SpMatrix A(0,0,0), B(0,0,0);
+  matrix_csr::convert_from_grs_input(argvin,     A);
+  matrix_csr::convert_from_grs_input(argvin + 4, B);
 
   {
     struct timespec t1, t2; 
     std::cout << "Attempting matrix matrix multiplication "
-              << (A.matrix->m) << "x" << (A.matrix->n) << " * "
-              << (B.matrix->m) << "x" << (B.matrix->n) << " ... ";
+              << (A.m) << "x" << (A.n) << " * "
+              << (B.m) << "x" << (B.n) << " ... ";
 
     clock_gettime(CLOCK_REALTIME, &t1);
     SpMatrix C =
-      SpMM_DSParallel_RowStore<excess::concurrent_bag_MSTLB>(*A.matrix,
-                                                             *B.matrix);
+      SpMM_DSParallel_RowStore<excess::concurrent_bag_MSTLB>(A, B);
     clock_gettime(CLOCK_REALTIME, &t2);
 
     std::cout << "Ok." << std::endl;
@@ -80,7 +80,9 @@ static void perform_op(int argcin, int argcout,
                   1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
               << " sec" << std::endl;
     matrix_csr::convert_to_grs_output(C, argvout);
- }
+  }
+  matrix_csr::clear(A);
+  matrix_csr::clear(B);
 
   std::cout << "SpGEMM_variant_dsparallel::perform_op finished." << std::endl;
 }

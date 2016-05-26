@@ -87,21 +87,22 @@ static void perform_op(int argcin, int argcout,
 
   // FIXME: The matrices start on the CPU here.
   //        It is not clear how to interface efficiently with bhsparse.
-  matrix_csr A = matrix_csr(argvin);
-  matrix_csr B = matrix_csr(argvin + 4);
-  int*       Crp = (int*)calloc((A.rows()+1), sizeof(int));
+  SpMatrix A(0,0,0), B(0,0,0);
+  matrix_csr::convert_from_grs_input(argvin,     A);
+  matrix_csr::convert_from_grs_input(argvin + 4, B);
+  int*     Crp = (int*)calloc((A.m+1), sizeof(int));
 
   {
     struct timespec t1, t2; 
     std::cout << "Attempting matrix matrix multiplication "
-              << (A.matrix->m) << "x" << (A.matrix->n) << " * "
-              << (B.matrix->m) << "x" << (B.matrix->n) << " ... ";
+              << (A.m) << "x" << (A.n) << " * "
+              << (B.m) << "x" << (B.n) << " ... ";
 
     clock_gettime(CLOCK_REALTIME, &t1);
 
-    if (spgemm.initData(A.rows(), A.columns(), B.columns(),
-                        A.nonzeros(), A.matrix->v, A.matrix->rp, A.matrix->ci,
-                        B.nonzeros(), B.matrix->v, B.matrix->rp, B.matrix->ci,
+    if (spgemm.initData(A.m, A.n, B.n,
+                        A.nzmax, A.v, A.rp, A.ci,
+                        B.nzmax, B.v, B.rp, B.ci,
                         Crp) != BHSPARSE_SUCCESS) {
       std::cout << ("SpGEMM_variant_bhSPARSE_cuda::perform_op: Error: "
                     "Failed to setup bhSPARSE SpGEMM instance.")
@@ -117,7 +118,7 @@ static void perform_op(int argcin, int argcout,
     // Read C back to CPU.
     // FIXME: Should be delayed until necessary.
     int nnzC = spgemm.get_nnzC();
-    SpMatrix C = SpMatrix(A.rows(), B.columns(), nnzC);
+    SpMatrix C = SpMatrix(A.m, B.n, nnzC);
 
     // Transfer the Crp array to the SpMatrix.
     std::free(C.rp);
@@ -146,6 +147,9 @@ static void perform_op(int argcin, int argcout,
               << " sec" << std::endl;
     matrix_csr::convert_to_grs_output(C, argvout);
   }
+  matrix_csr::clear(A);
+  matrix_csr::clear(B);
+
   std::cout << "SpGEMM_variant_bhSPARSE_cuda::perform_op finished."
             << std::endl;
 }
