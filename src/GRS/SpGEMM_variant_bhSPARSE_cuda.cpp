@@ -85,25 +85,43 @@ static void perform_op(int argcin, int argcout,
     return;
   }
 
-  // FIXME: The matrices start on the CPU here.
-  //        It is not clear how to interface efficiently with bhsparse.
+#ifdef MODIFIED_BHSPARSE
+  // NOTE: This requires a modified version of bhSPARSE.
+  int A_m, A_n, A_nzmax; int* A_rp; int* A_ci; double* A_v;
+  int B_m, B_n, B_nzmax; int* B_rp; int* B_ci; double* B_v;
+  matrix_csr::convert_from_grs_input_for_gpu(argvin,
+                                             A_m, A_n, A_nzmax,
+                                             A_rp, A_ci, A_v);
+  matrix_csr::convert_from_grs_input_for_gpu(argvin + 4,
+                                             B_m, B_n, B_nzmax,
+                                             B_rp, B_ci, B_v);
+#else
+  // FIXME: The matrices start on the CPU.
   SpMatrix A(0,0,0), B(0,0,0);
   matrix_csr::convert_from_grs_input(argvin,     A);
   matrix_csr::convert_from_grs_input(argvin + 4, B);
-  int*     Crp = (int*)calloc((A.m+1), sizeof(int));
-
+  int A_m = A.m; int A_n = A.n; int A_nzmax = A.nzmax;
+  int B_m = B.m; int B_n = B.n; int B_nzmax = B.nzmax;
+  int* Crp = (int*)calloc((A.m+1), sizeof(int));
+#endif
   {
     struct timespec t1, t2; 
     std::cout << "Attempting matrix matrix multiplication "
-              << (A.m) << "x" << (A.n) << " * "
-              << (B.m) << "x" << (B.n) << " ... ";
+              << (A_m) << "x" << (A_n) << " * "
+              << (B_m) << "x" << (B_n) << " ... ";
 
     clock_gettime(CLOCK_REALTIME, &t1);
 
+#ifdef MODIFIED_BHSPARSE
+    if (spgemm.setDeviceData(A_m, A_n, B_n,
+                             A_nzmax, A_v, A_rp, A_ci,
+                             B_nzmax, B_v, B_rp, B_ci) != BHSPARSE_SUCCESS) {
+#else
     if (spgemm.initData(A.m, A.n, B.n,
                         A.nzmax, A.v, A.rp, A.ci,
                         B.nzmax, B.v, B.rp, B.ci,
                         Crp) != BHSPARSE_SUCCESS) {
+#endif
       std::cout << ("SpGEMM_variant_bhSPARSE_cuda::perform_op: Error: "
                     "Failed to setup bhSPARSE SpGEMM instance.")
                 << std::endl;
@@ -115,10 +133,16 @@ static void perform_op(int argcin, int argcout,
                 << std::endl;
     }
 
+#ifdef MODIFIED_BHSPARSE
+    // Read the GPU-side rp, ci and v arrays
+    int C_nnz = spgemm.get_nnzC();
+    int* C_rp; int* C_ci; double* C_v;
+    spgemm.getDevice_C(C_rp, C_ci, C_v);
+#else
     // Read C back to CPU.
     // FIXME: Should be delayed until necessary.
-    int nnzC = spgemm.get_nnzC();
-    SpMatrix C = SpMatrix(A.m, B.n, nnzC);
+    int C_nnz  = spgemm.get_nnzC();
+    SpMatrix C = SpMatrix(A.m, B.n, C_nnz);
 
     // Transfer the Crp array to the SpMatrix.
     std::free(C.rp);
@@ -129,27 +153,36 @@ static void perform_op(int argcin, int argcout,
       std::cout << ("SpGEMM_variant_bhSPARSE_cuda::perform_op: Error: "
                     "bhSPARSE SpGEMM get_C() failed.")
                 << std::endl;
-    }
+    } 
+#endif
+
+    clock_gettime(CLOCK_REALTIME, &t2);
+
+    std::cout << "Ok." << std::endl;
+    std::cout << "% Result C is " << (A_m) << "x" << (B_n) << " matrix with "
+              << (C_nnz) << " non-zeros." << std::endl;
+    std::cout << "% Duration: "
+              << ((double)(t2.tv_sec - t1.tv_sec) +
+                  1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
+              << " sec" << std::endl;
+
+    // Reallocate the GRS output matrix.
+#ifdef MODIFIED_BHSPARSE
+    matrix_csr::convert_to_grs_gpu_output(A_m, B_n, C_nnz, C_rp, C_ci, C_v,
+                                          argvout);
+#else
+    matrix_csr::convert_to_grs_output(C, argvout);
+    matrix_csr::clear(A);
+    matrix_csr::clear(B);
+#endif
+    /*
     if (spgemm.free_mem() != BHSPARSE_SUCCESS) {
       std::cout << ("SpGEMM_variant_bhSPARSE_cuda::perform_op: Error: "
                     "bhSPARSE SpGEMM free_mem() failed.")
                 << std::endl;
     }
-
-    clock_gettime(CLOCK_REALTIME, &t2);
-
-    std::cout << "Ok." << std::endl;
-    std::cout << "% Result C is " << (C.m) << "x" << (C.n) << " matrix with "
-              << (C.nzmax) << " non-zeros." << std::endl;
-    std::cout << "% Duration: "
-              << ((double)(t2.tv_sec - t1.tv_sec) +
-                  1e-9 * (double)(t2.tv_nsec - t1.tv_nsec))
-              << " sec" << std::endl;
-    matrix_csr::convert_to_grs_output(C, argvout);
+    */
   }
-  matrix_csr::clear(A);
-  matrix_csr::clear(B);
-
   std::cout << "SpGEMM_variant_bhSPARSE_cuda::perform_op finished."
             << std::endl;
 }

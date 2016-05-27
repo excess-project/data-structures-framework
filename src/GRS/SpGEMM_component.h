@@ -37,197 +37,52 @@ struct matrix_csr
   struct grs_vector* vec_ci;
   struct grs_vector* vec_v;
 
-  matrix_csr(int m, int n)
-  {
-    initialize(m, n, 0);
-  }
+  matrix_csr(int m, int n);
+  matrix_csr(SpMatrix matrix);
 
-  matrix_csr(SpMatrix matrix)
-  {
-    initialize(matrix.m, matrix.n, matrix.nzmax);
-    // Copy the matrix contents. 
-    std::memcpy(read_grs_vector_on_cpu(vec_rp),
-                matrix.rp,
-                (matrix.m+1) * sizeof(int));
-    std::memcpy(read_grs_vector_on_cpu(vec_ci),
-                matrix.ci,
-                matrix.nzmax * sizeof(int));
-    std::memcpy(read_grs_vector_on_cpu(vec_v),
-                matrix.v,
-                matrix.nzmax * sizeof(double));
-  }
+  ~matrix_csr();
 
-  ~matrix_csr()
-  {
-    std::cout << "SpGEMM_component.h::~matrix_csr()" << std::endl;
-    // NOTE: The actual data blocks should also be freed.
-    free(vec_m_n_nzmax);
-    free(vec_rp);
-    free(vec_ci);
-    free(vec_v);
-  }
+  int rows() const;
+  int columns() const;
+  int nonzeros() const;
 
-  int rows() const
-  {
-    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
-    return m_n_nzmax[0];
-  }
-
-  int columns() const
-  {
-    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
-    return m_n_nzmax[1];
-  }
-
-  int nonzeros() const
-  {
-    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
-    return m_n_nzmax[2];
-  }
-
-  void save_to_file(std::string filename)
-  {
-    SpMatrix matrix = convert_to_SpMatrix();
-    matrix.SaveToFile(filename);
-  }
+  void save_to_file(std::string filename);
 
   // Creates an independent SpMatrix instance.
-  SpMatrix convert_to_SpMatrix()
-  {
-    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
-    SpMatrix matrix = SpMatrix(m_n_nzmax[0],
-                               m_n_nzmax[1],
-                               m_n_nzmax[2]);
-    std::memcpy(matrix.rp,
-                read_grs_vector_on_cpu(vec_rp),
-                (matrix.m+1) * sizeof(int));
-    std::memcpy(matrix.ci,
-                read_grs_vector_on_cpu(vec_ci),
-                matrix.nzmax * sizeof(int));
-    std::memcpy(matrix.v,
-                read_grs_vector_on_cpu(vec_v),
-                matrix.nzmax * sizeof(double));
-    return matrix;
-  }
+  SpMatrix convert_to_SpMatrix();
 
   // Creates a SpMatrix instance that shares its storage with GRS.
   // NOTE: Beware of the SpMatrix destructor! Run clear() on the matrix
   //       before it goes out of scope.
-  static void convert_from_grs_input(grs_data** argvin, SpMatrix& matrix)
-  {
-    // Remove the old matrix content.
-    std::free(matrix.rp);
-    std::free(matrix.ci);
-    std::free(matrix.v);
-
-    grs_vector* vec_m_n_nzmax = (grs_vector*)argvin[0]->d; // matrix m; n; nzmax
-    grs_vector* vec_rp = (grs_vector*)argvin[1]->d; // matrix rp
-    grs_vector* vec_ci = (grs_vector*)argvin[2]->d; // matrix ci
-    grs_vector* vec_v  = (grs_vector*)argvin[3]->d; // matrix v
-
-    // Read m_n_nzmax.
-    int* m_n_nzmax = (int*)read_grs_vector_on_cpu(vec_m_n_nzmax);
-
-    // Initialize the SpMatrix using the already existing storage.
-    matrix.m = m_n_nzmax[0];
-    matrix.n = m_n_nzmax[1];
-    matrix.nzmax = m_n_nzmax[2];
-    matrix.rp = (int*)read_grs_vector_on_cpu(vec_rp);
-    matrix.ci = (int*)read_grs_vector_on_cpu(vec_ci);
-    matrix.v  = (double*)read_grs_vector_on_cpu(vec_v);
-  }
+  static void convert_from_grs_input(grs_data** argvin, SpMatrix& matrix);
 
   // To make a SpMatrix sharing storage with GRS safe for destruction.
-  static void clear(SpMatrix& matrix)
-  {
-    matrix.nzmax = 0;
-    matrix.rp = 0;
-    matrix.ci = 0;
-    matrix.v  = 0;
-  }
+  static void clear(SpMatrix& matrix);
 
-  static void convert_to_grs_output(SpMatrix& matrix, grs_data** argvout)
-  {
-    // NOTE: The matrix argument will be destroyed. 
+  // Export the GPU side data buffers of one matrix_csr.
+  static void convert_from_grs_input_for_gpu(grs_data** argvin,
+                                             int& m, int& n, int& nzmax, 
+                                             int*& gpu_rp,
+                                             int*& gpu_ci,
+                                             double*& gpu_v);
 
-    // argvout mapping:
-    //   argvout[0]:  m_n_nzmax
-    //   argvout[1]:  rp
-    //   argvout[2]:  ci
-    //   argvout[3]:  v
+  static void convert_to_grs_output(SpMatrix& matrix, grs_data** argvout);
 
-    // Set m_n_nzmax using the existing result matrix.
-    ((grs_vector*)argvout[0]->d)->mode = 0;
-    int* m_n_nzmax = (int*)((grs_vector*)argvout[0]->d)->d_cpu;
-    m_n_nzmax[0] = matrix.m;
-    m_n_nzmax[1] = matrix.n;
-    m_n_nzmax[2] = matrix.nzmax;
-
-    // Set rp using the existing result matrix.
-    ((grs_vector*)argvout[1]->d)->mode  = 0;
-    ((grs_vector*)argvout[1]->d)->d_cpu = matrix.rp;
-    ((grs_vector*)argvout[1]->d)->size  = (matrix.m*sizeof(int))/sizeof(float);
-
-    // Set ci using the existing result matrix.
-    ((grs_vector*)argvout[2]->d)->mode  = 0;
-    ((grs_vector*)argvout[2]->d)->d_cpu = matrix.ci;
-    ((grs_vector*)argvout[2]->d)->size  =
-      (matrix.nzmax*sizeof(int))/sizeof(float);
-
-    // Set v using the existing result matrix.
-    ((grs_vector*)argvout[3]->d)->mode  = 0;
-    ((grs_vector*)argvout[3]->d)->d_cpu = matrix.v;
-    ((grs_vector*)argvout[3]->d)->size  =
-      (matrix.nzmax*sizeof(double))/sizeof(float);
-
-    clear(matrix);
-  }
+  static void convert_to_grs_gpu_output(int m, int n, int nzmax,
+                                        int* gpu_rp, int* gpu_ci,
+                                        double* gpu_v,
+                                        grs_data** argvout);
 
 private:
-  void initialize(int m, int n, int nzmax)
-  {
-    int* m_n_nzmax = (int*)malloc(3*sizeof(int));
-    m_n_nzmax[0] = m;
-    m_n_nzmax[1] = n;
-    m_n_nzmax[2] = nzmax;
-
-    grs_data_init(&d_m_n_nzmax, GRS_VECTOR);
-    grs_data_init(&d_rp, GRS_VECTOR);
-    grs_data_init(&d_ci, GRS_VECTOR);
-    grs_data_init(&d_v,  GRS_VECTOR);
-
-    vec_m_n_nzmax = (struct grs_vector*)malloc(sizeof(struct grs_vector));
-    vec_rp        = (struct grs_vector*)malloc(sizeof(struct grs_vector));
-    vec_ci        = (struct grs_vector*)malloc(sizeof(struct grs_vector));
-    vec_v         = (struct grs_vector*)malloc(sizeof(struct grs_vector));
-    
-    grs_data_set_vector(&d_m_n_nzmax, vec_m_n_nzmax);
-    grs_data_set_vector(&d_rp, vec_rp);
-    grs_data_set_vector(&d_ci, vec_ci);
-    grs_data_set_vector(&d_v,  vec_v);
-
-    grs_vector_init(vec_m_n_nzmax, (float*)m_n_nzmax, 4, "m_n_nzmax");
-    grs_vector_init(vec_rp, (float*)malloc((m+1)*sizeof(int)),
-                    (m*sizeof(int))/sizeof(float), "rp");
-    grs_vector_init(vec_ci, (float*)malloc(nzmax*sizeof(int)),
-                    (nzmax*sizeof(int))/sizeof(float), "ci");
-    grs_vector_init(vec_v,  (float*)malloc(nzmax*sizeof(double)),
-                    (nzmax*sizeof(double))/sizeof(float), "v");
-  }
-
-  static float* read_grs_vector_on_cpu(grs_vector* vec_x)
-  {
-    float* x = (float*)vec_x->d_cpu;
-    int size = vec_x->size;
-
-    if(vec_x->mode==1) {
-      std::cout << "read_grs_vector_on_cpu: Reading stale data on CPU. "
-                << "FIXME. Should refresh from GPU." << std::endl;
-      //copy_from_gpu(in1, (float*) input1->d_gpu, ode_size);
-      vec_x->mode = 0;
-    }
-    return x;
-  }
+  void initialize(int m, int n, int nzmax);
+  static float* read_grs_vector_on_cpu(grs_vector* vec_x);
+  static float* read_grs_vector_on_gpu(grs_vector* vec_x);
+  static void replace_grs_vector_on_cpu(grs_vector* vec,
+                                        float* data,
+                                        size_t size);
+  static void replace_grs_vector_on_gpu(grs_vector* vec,
+                                        float* data,
+                                        size_t size);
 };
 
 class SpGEMM_component_csr
