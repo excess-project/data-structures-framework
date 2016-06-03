@@ -224,7 +224,7 @@ void matrix_csr::convert_to_grs_output(SpMatrix& matrix, grs_data** argvout)
   // Set rp using the existing result matrix.
   replace_grs_vector_on_cpu((grs_vector*)argvout[1]->d,
                             (float*)matrix.rp,
-                            (matrix.m*sizeof(int))/sizeof(float));
+                            ((matrix.m+1)*sizeof(int))/sizeof(float));
 
   // Set ci using the existing result matrix.
   replace_grs_vector_on_cpu((grs_vector*)argvout[2]->d,
@@ -262,7 +262,7 @@ void matrix_csr::convert_to_grs_gpu_output(int m, int n, int nzmax,
   // Set rp, ci and v using the existing result.
   replace_grs_vector_on_gpu((grs_vector*)argvout[1]->d,
                             (float*)gpu_rp,
-                            (m*sizeof(int))/sizeof(float));
+                            ((m+1)*sizeof(int))/sizeof(float));
   replace_grs_vector_on_gpu((grs_vector*)argvout[2]->d,
                             (float*)gpu_ci,
                             (nzmax*sizeof(int))/sizeof(float));
@@ -288,9 +288,10 @@ void matrix_csr::initialize(int m, int n, int nzmax)
   vec_ci        = (struct grs_vector*)malloc(sizeof(struct grs_vector));
   vec_v         = (struct grs_vector*)malloc(sizeof(struct grs_vector));
   
-  grs_vector_init(vec_m_n_nzmax, (float*)m_n_nzmax, 4, "m_n_nzmax");
+  grs_vector_init(vec_m_n_nzmax, (float*)m_n_nzmax,
+                  (3*sizeof(int))/sizeof(float), "m_n_nzmax");
   grs_vector_init(vec_rp, (float*)malloc((m+1)*sizeof(int)),
-                  (m*sizeof(int))/sizeof(float), "rp");
+                  ((m+1)*sizeof(int))/sizeof(float), "rp");
   grs_vector_init(vec_ci, (float*)malloc(nzmax*sizeof(int)),
                   (nzmax*sizeof(int))/sizeof(float), "ci");
   grs_vector_init(vec_v,  (float*)malloc(nzmax*sizeof(double)),
@@ -351,7 +352,7 @@ void matrix_csr::replace_grs_vector_on_gpu(grs_vector* vec,
   free_data_on_gpu(vec->d_gpu);
   vec->d_gpu = data;
   if (vec->size != size) {
-    // GPU side storage must be resized.
+    // CPU side storage must be resized.
     vec->size = size;
     std::free(vec->d_cpu);
     vec->d_cpu = malloc(size * sizeof(float));
